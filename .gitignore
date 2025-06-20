@@ -1,0 +1,16 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Node.js
+node_modules/
+dist/
+pnpm-lock.yaml
+*.log
+build/
+.env
+.vscode/
+
