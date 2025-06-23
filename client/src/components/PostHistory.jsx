@@ -1,311 +1,312 @@
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
+import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, 
-  Clock, 
-  Eye, 
-  Edit, 
-  Trash2,
-  ExternalLink,
-  Filter,
-  Search
-} from 'lucide-react'
-import { Input } from './ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+  FileText, Eye, Calendar, Globe, Search, Filter,
+  MoreVertical, Edit, Trash2, ExternalLink, Plus,
+  CheckCircle, Clock, AlertCircle, TrendingUp
+} from 'lucide-react';
 
-// 샘플 포스팅 기록 데이터
-const samplePosts = [
-  {
-    id: 1,
-    title: 'AI 기반 콘텐츠 마케팅 전략 완벽 가이드',
-    status: 'published',
-    views: 1250,
-    date: '2024-06-20T10:30:00',
-    category: '기술',
-    site: '내 블로그',
-    url: 'https://myblog.com/ai-content-marketing-guide',
-    excerpt: 'AI를 활용한 콘텐츠 마케팅의 모든 것을 알아보세요...'
-  },
-  {
-    id: 2,
-    title: '워드프레스 SEO 최적화 완벽 가이드',
-    status: 'draft',
-    views: 0,
-    date: '2024-06-19T15:45:00',
-    category: '기술',
-    site: '내 블로그',
-    url: null,
-    excerpt: '워드프레스 사이트의 SEO를 향상시키는 방법...'
-  },
-  {
-    id: 3,
-    title: '2024년 디지털 마케팅 트렌드',
-    status: 'published',
-    views: 890,
-    date: '2024-06-18T09:15:00',
-    category: '비즈니스',
-    site: '내 블로그',
-    url: 'https://myblog.com/digital-marketing-trends-2024',
-    excerpt: '올해 주목해야 할 디지털 마케팅 트렌드를 소개합니다...'
-  },
-  {
-    id: 4,
-    title: '블로그 수익화 전략 A to Z',
-    status: 'scheduled',
-    views: 0,
-    date: '2024-06-21T08:00:00',
-    category: '비즈니스',
-    site: '내 블로그',
-    url: null,
-    excerpt: '블로그로 수익을 창출하는 다양한 방법들...'
-  }
-]
+const PostHistory = () => {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
 
-export default function PostHistory() {
-  const [posts, setPosts] = useState(samplePosts)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  useEffect(() => {
+    fetchPosts();
+  }, [statusFilter, sortBy, sortOrder]);
 
-  const getStatusBadge = (status) => {
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      params.append('limit', '50');
+
+      const response = await fetch(`/api/posts?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(data.posts || []);
+      } else {
+        console.error('포스트 조회 실패');
+      }
+    } catch (error) {
+      console.error('포스트 조회 오류:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         post.keyword.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const getStatusIcon = (status) => {
     switch (status) {
       case 'published':
-        return <Badge variant="default" className="bg-green-500">게시됨</Badge>
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'draft':
-        return <Badge variant="secondary">초안</Badge>
-      case 'scheduled':
-        return <Badge variant="outline">예약됨</Badge>
+        return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'failed':
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
       default:
-        return <Badge variant="secondary">{status}</Badge>
+        return <Clock className="w-4 h-4 text-gray-600" />;
     }
-  }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'published':
+        return '발행됨';
+      case 'draft':
+        return '초안';
+      case 'failed':
+        return '실패';
+      default:
+        return '알 수 없음';
+    }
+  };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ko-KR', {
+    return new Date(dateString).toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    })
-  }
+    });
+  };
 
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || post.status === statusFilter
-    const matchesCategory = categoryFilter === 'all' || post.category === categoryFilter
-    
-    return matchesSearch && matchesStatus && matchesCategory
-  })
-
-  const handleDelete = (postId) => {
-    if (confirm('정말로 이 포스트를 삭제하시겠습니까?')) {
-      setPosts(prev => prev.filter(post => post.id !== postId))
+  const deletePost = async (postId) => {
+    if (!confirm('정말로 이 포스트를 삭제하시겠습니까?')) {
+      return;
     }
+
+    try {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        fetchPosts(); // 목록 새로고침
+      } else {
+        alert('포스트 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('포스트 삭제 오류:', error);
+      alert('포스트 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-white rounded-lg h-24"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">포스팅 기록</h1>
-        <p className="text-muted-foreground">
-          생성되고 발행된 모든 포스트를 관리하세요
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* 헤더 */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">포스트 기록</h1>
+          <p className="text-gray-600">생성된 모든 포스트를 관리하고 확인하세요</p>
+        </div>
 
-      {/* 필터 및 검색 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="h-5 w-5" />
-            <span>필터 및 검색</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">검색</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="제목 또는 내용 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {/* 필터 및 검색 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* 검색 */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="제목이나 키워드로 검색..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* 필터 */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">모든 상태</option>
+                  <option value="published">발행됨</option>
+                  <option value="draft">초안</option>
+                  <option value="failed">실패</option>
+                </select>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">상태</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 상태</SelectItem>
-                  <SelectItem value="published">게시됨</SelectItem>
-                  <SelectItem value="draft">초안</SelectItem>
-                  <SelectItem value="scheduled">예약됨</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">카테고리</label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 카테고리</SelectItem>
-                  <SelectItem value="기술">기술</SelectItem>
-                  <SelectItem value="비즈니스">비즈니스</SelectItem>
-                  <SelectItem value="라이프스타일">라이프스타일</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-end">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm('')
-                  setStatusFilter('all')
-                  setCategoryFilter('all')
+              <select
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [field, order] = e.target.value.split('-');
+                  setSortBy(field);
+                  setSortOrder(order);
                 }}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                필터 초기화
-              </Button>
+                <option value="created_at-desc">최신순</option>
+                <option value="created_at-asc">오래된순</option>
+                <option value="title-asc">제목순</option>
+                <option value="views-desc">조회수순</option>
+              </select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* 포스트 목록 */}
-      <div className="space-y-4">
-        {filteredPosts.length > 0 ? (
-          filteredPosts.map((post) => (
-            <Card key={post.id}>
-              <CardContent className="pt-6">
+        {/* 포스트 목록 */}
+        <div className="space-y-4">
+          {filteredPosts.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">포스트가 없습니다</h3>
+              <p className="text-gray-600 mb-6">
+                {searchTerm || statusFilter !== 'all' 
+                  ? '검색 조건에 맞는 포스트가 없습니다.' 
+                  : '아직 생성된 포스트가 없습니다. 첫 번째 포스트를 만들어보세요!'}
+              </p>
+              <button
+                onClick={() => window.location.href = '/content-generator'}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                포스트 생성하기
+              </button>
+            </div>
+          ) : (
+            filteredPosts.map((post) => (
+              <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-foreground">
+                    {/* 제목 및 상태 */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 flex-1">
                         {post.title}
                       </h3>
-                      {getStatusBadge(post.status)}
-                      <Badge variant="outline">{post.category}</Badge>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(post.status)}
+                        <span className="text-sm font-medium text-gray-600">
+                          {getStatusText(post.status)}
+                        </span>
+                      </div>
                     </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {post.excerpt}
-                    </p>
-                    
-                    <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDate(post.date)}</span>
+
+                    {/* 키워드 */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {post.keyword}
+                      </span>
+                      {post.seo_score && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          SEO {post.seo_score}점
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 메타 정보 */}
+                    <div className="flex items-center gap-6 text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>{formatDate(post.created_at)}</span>
                       </div>
-                      
-                      <div className="flex items-center space-x-1">
-                        <Eye className="h-4 w-4" />
-                        <span>{post.views.toLocaleString()} 조회</span>
+                      <div className="flex items-center gap-1">
+                        <FileText className="w-4 h-4" />
+                        <span>{post.word_count}단어</span>
                       </div>
-                      
-                      <div className="flex items-center space-x-1">
-                        <span>사이트: {post.site}</span>
+                      <div className="flex items-center gap-1">
+                        <Eye className="w-4 h-4" />
+                        <span>{post.views}회</span>
                       </div>
+                      {post.wordpress_url && (
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-4 h-4" />
+                          <span>WordPress</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 콘텐츠 미리보기 */}
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {post.content.substring(0, 200)}...
+                      </p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2 ml-4">
-                    {post.url && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(post.url, '_blank')}
+
+                  {/* 액션 버튼 */}
+                  <div className="ml-4 flex items-center gap-2">
+                    {post.wordpress_url && (
+                      <a
+                        href={post.wordpress_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="WordPress에서 보기"
                       >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
                     )}
                     
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDelete(post.id)}
+                    <button
+                      onClick={() => deletePost(post.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="삭제"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-12">
-                <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  포스트가 없습니다
-                </h3>
-                <p className="text-muted-foreground">
-                  검색 조건에 맞는 포스트를 찾을 수 없습니다.
-                </p>
               </div>
-            </CardContent>
-          </Card>
+            ))
+          )}
+        </div>
+
+        {/* 페이지네이션 (필요시 추가) */}
+        {filteredPosts.length > 0 && (
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-600">
+              총 {filteredPosts.length}개의 포스트
+            </p>
+          </div>
         )}
       </div>
-
-      {/* 통계 요약 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>포스팅 통계</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-foreground">
-                {posts.length}
-              </div>
-              <div className="text-sm text-muted-foreground">총 포스트</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-500">
-                {posts.filter(p => p.status === 'published').length}
-              </div>
-              <div className="text-sm text-muted-foreground">게시됨</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-500">
-                {posts.filter(p => p.status === 'draft').length}
-              </div>
-              <div className="text-sm text-muted-foreground">초안</div>
-            </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-500">
-                {posts.reduce((sum, post) => sum + post.views, 0).toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">총 조회수</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
-  )
-}
+  );
+};
+
+export default PostHistory;
 

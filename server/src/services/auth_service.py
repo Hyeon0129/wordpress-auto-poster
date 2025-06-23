@@ -153,20 +153,98 @@ class AdvancedAuthService:
         return hashlib.sha256(data.encode()).hexdigest()
     
     def send_verification_email(self, email: str, verification_code: str) -> bool:
-        """이메일 인증 코드 발송 (시뮬레이션)"""
+        """이메일 인증 코드 발송"""
         try:
-            print(f"이메일 인증 코드 발송 시뮬레이션: {email} -> {verification_code}")
-            return True
+            # SMTP 설정이 있는 경우 실제 이메일 발송
+            if self.smtp_username and self.smtp_password:
+                import smtplib
+                from email.mime.text import MimeText
+                from email.mime.multipart import MimeMultipart
+                
+                msg = MimeMultipart()
+                msg['From'] = self.smtp_username
+                msg['To'] = email
+                msg['Subject'] = "WordPress Auto Poster - 이메일 인증"
+                
+                body = f"""
+                안녕하세요!
+                
+                WordPress Auto Poster 회원가입을 위한 이메일 인증 코드입니다.
+                
+                인증 코드: {verification_code}
+                
+                이 코드는 30분 후에 만료됩니다.
+                
+                감사합니다.
+                WordPress Auto Poster 팀
+                """
+                
+                msg.attach(MimeText(body, 'plain', 'utf-8'))
+                
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+                server.starttls()
+                server.login(self.smtp_username, self.smtp_password)
+                text = msg.as_string()
+                server.sendmail(self.smtp_username, email, text)
+                server.quit()
+                
+                print(f"이메일 인증 코드 발송 완료: {email} -> {verification_code}")
+                return True
+            else:
+                # SMTP 설정이 없는 경우 콘솔에 출력 (개발 모드)
+                print(f"[개발 모드] 이메일 인증 코드: {email} -> {verification_code}")
+                return True
         except Exception as e:
             print(f"이메일 발송 실패: {e}")
             return False
     
     def send_password_reset_email(self, email: str, reset_token: str, base_url: str) -> bool:
-        """비밀번호 재설정 이메일 발송 (시뮬레이션)"""
+        """비밀번호 재설정 이메일 발송"""
         try:
             reset_url = f"{base_url}/reset-password?token={reset_token}"
-            print(f"비밀번호 재설정 이메일 발송 시뮬레이션: {email} -> {reset_url}")
-            return True
+            
+            # SMTP 설정이 있는 경우 실제 이메일 발송
+            if self.smtp_username and self.smtp_password:
+                import smtplib
+                from email.mime.text import MimeText
+                from email.mime.multipart import MimeMultipart
+                
+                msg = MimeMultipart()
+                msg['From'] = self.smtp_username
+                msg['To'] = email
+                msg['Subject'] = "WordPress Auto Poster - 비밀번호 재설정"
+                
+                body = f"""
+                안녕하세요!
+                
+                WordPress Auto Poster 비밀번호 재설정 요청을 받았습니다.
+                
+                아래 링크를 클릭하여 비밀번호를 재설정하세요:
+                {reset_url}
+                
+                이 링크는 30분 후에 만료됩니다.
+                
+                만약 비밀번호 재설정을 요청하지 않으셨다면 이 이메일을 무시하세요.
+                
+                감사합니다.
+                WordPress Auto Poster 팀
+                """
+                
+                msg.attach(MimeText(body, 'plain', 'utf-8'))
+                
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+                server.starttls()
+                server.login(self.smtp_username, self.smtp_password)
+                text = msg.as_string()
+                server.sendmail(self.smtp_username, email, text)
+                server.quit()
+                
+                print(f"비밀번호 재설정 이메일 발송 완료: {email} -> {reset_url}")
+                return True
+            else:
+                # SMTP 설정이 없는 경우 콘솔에 출력 (개발 모드)
+                print(f"[개발 모드] 비밀번호 재설정 링크: {email} -> {reset_url}")
+                return True
         except Exception as e:
             print(f"비밀번호 재설정 이메일 발송 실패: {e}")
             return False

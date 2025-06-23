@@ -1,275 +1,188 @@
-# WordPress Auto Poster v2.0 - AI 기반 콘텐츠 자동화 플랫폼
+# WordPress Auto Poster v2.0.0
 
-<div align="center">
+AI 기반 워드프레스 자동 포스팅 플랫폼 - 프로덕션 준비 완료
 
-![WordPress Auto Poster](https://img.shields.io/badge/WordPress-Auto%20Poster-blue?style=for-the-badge&logo=wordpress)
-![Version](https://img.shields.io/badge/Version-2.0-green?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+## 🚀 주요 개선사항 (v2.0.0)
 
-**AI 기반의 고품질 콘텐츠 자동 생성 및 워드프레스 포스팅 플랫폼**
+### ✨ 새로운 기능
+- **이메일 인증 시스템**: 회원가입 시 이메일 인증 필수 (60초 타임아웃)
+- **SEO 최적화 탭**: 실제 SEO 분석 및 최적화 기능 구현
+- **진행상황 표시**: 콘텐츠 생성 과정을 5단계로 시각화
+- **Writesonic 스타일 UI**: 현대적이고 직관적인 사용자 인터페이스
+- **다중 AI 모델 지원**: GPT-4, Claude, Gemini 등 선택 가능
 
-[🚀 빠른 시작](#-빠른-시작) • [📖 사용자 가이드](USER_GUIDE_V2.md) • [🎯 주요 기능](#-주요-기능) • [🔧 설치](#-설치) • [📱 라이브 데모](#-라이브-데모)
+### 🔧 개선사항
+- **API 키 연동 시스템**: .env 파일 및 웹 인터페이스에서 API 키 설정 가능
+- **WordPress 계정 연동**: 안정적인 REST API 기반 연동 시스템
+- **보안 강화**: JWT 토큰 기반 인증, API 키 암호화 저장
+- **반응형 디자인**: 모바일 및 태블릿 최적화
+- **에러 처리**: 상세한 에러 메시지 및 해결 방안 제공
 
-</div>
+### 🐛 해결된 문제
+- ✅ .env에 API 키 추가해도 데모 모드로 실행되는 문제 해결
+- ✅ 설정에서 API 키 연결 시 에러 발생 문제 해결
+- ✅ 워드프레스 계정 연동 실패 문제 해결
+- ✅ SEO 최적화 탭 기능 없음 문제 해결
+- ✅ 콘텐츠 생성 진행상황 표시 기능 추가
 
----
+## 📦 빠른 시작
 
-## 🎯 주요 기능
-
-### ✨ 핵심 기능
-- **🤖 AI 기반 콘텐츠 생성**: OpenAI GPT를 활용한 고품질 콘텐츠 자동 생성
-- **📊 실시간 진행 상황**: 5단계 콘텐츠 생성 과정 시각화
-- **🔍 SEO 최적화**: 키워드 분석, 메타 태그 생성, 콘텐츠 최적화
-- **📈 키워드 분석**: 경쟁 강도 분석 및 관련 키워드 추천
-- **🔗 워드프레스 연동**: 완전한 WordPress API 연동 및 자동 포스팅
-- **🎨 현대적인 UI/UX**: React 기반의 반응형 웹 인터페이스
-- **🔐 JWT 인증**: 안전한 사용자 인증 및 관리 시스템
-- **🌙 다크모드**: 사용자 편의성을 위한 테마 전환
-
-### 🚀 개선된 기능 (v2.0)
-- **📱 개선된 사이드바**: 직관적인 네비게이션 및 사용량 표시
-- **⚡ API 상태 표시**: 실시간 API 연결 상태 모니터링
-- **🎛️ 통합 설정**: WordPress 및 LLM 설정 통합 관리
-- **📊 진행 상황 UI**: 콘텐츠 생성 과정 실시간 표시
-- **🔧 오류 수정**: 키워드 분석 API 오류 해결
-- **🎨 UI/UX 최적화**: Writesonic 스타일의 전문적인 인터페이스
-
-## 📱 라이브 데모
-
-- **🌐 프론트엔드**: [https://szmnagau.manus.space](https://szmnagau.manus.space)
-- **📚 API 문서**: [https://8000-i5m8uhbhve9by3jw98pxb-9f5fa722.manusvm.computer/docs](https://8000-i5m8uhbhve9by3jw98pxb-9f5fa722.manusvm.computer/docs)
-
-### 테스트 계정
-- **사용자명**: `testuser`
-- **비밀번호**: `password123`
-
-## 🚀 빠른 시작
-
-### 1️⃣ 자동 설치 (권장)
+### 1. 프로젝트 다운로드
 ```bash
-# 프로젝트 압축 해제
-tar -xzf wordpress-auto-poster-v2.tar.gz
+# 압축 파일 다운로드 후 압축 해제
+tar -xzf wordpress-auto-poster-v2.0.0.tar.gz
 cd wordpress-auto-poster
-
-# 자동 배포 스크립트 실행
-chmod +x deploy.sh
-./deploy.sh
 ```
 
-### 2️⃣ 수동 설치
+### 2. 백엔드 설정
 ```bash
-# 저장소 클론
-git clone https://github.com/Hyeon0129/wordpress-auto-poster.git
-cd wordpress-auto-poster
-
-# 백엔드 설정
 cd server
 pip install -r requirements.txt
-
-# 프론트엔드 설정
-cd ../client
-npm install
-
-# 환경변수 설정
-cp .env.example .env
-# .env 파일 편집
-
-# 실행
-# 터미널 1: 백엔드
-cd server && uvicorn src.main:app --host 0.0.0.0 --port 8000
-
-# 터미널 2: 프론트엔드
-cd client && npm run dev
 ```
 
-### 3️⃣ 접속
+### 3. 프론트엔드 설정
+```bash
+cd client
+npm install --legacy-peer-deps
+```
+
+### 4. 환경 변수 설정
+```bash
+# .env 파일 생성 및 설정
+cp .env.example .env
+# OpenAI API 키 등 필수 정보 입력
+```
+
+### 5. 서버 실행
+```bash
+# 백엔드 (터미널 1)
+cd server
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+# 프론트엔드 (터미널 2)
+cd client
+npm run dev
+```
+
+### 6. 접속
 브라우저에서 `http://localhost:3000` 접속
 
-## 🔧 설치
+## 📚 상세 문서
 
-### 시스템 요구사항
-- **Python**: 3.11+
-- **Node.js**: 20+
-- **메모리**: 4GB RAM 권장
-- **저장공간**: 1GB 이상
+완전한 설치 가이드, 사용법, 문제 해결 방법은 **`wordpress-auto-poster-manual.pdf`** 파일을 참조하세요.
 
-### 의존성
-#### 백엔드
-- FastAPI
-- SQLAlchemy
-- OpenAI
-- JWT
-- Uvicorn
+## 🔑 필수 요구사항
 
-#### 프론트엔드
-- React 18
-- Vite
-- TailwindCSS
-- Lucide Icons
+- **Python**: 3.8 이상
+- **Node.js**: 16.0 이상
+- **OpenAI API 키**: GPT 모델 사용을 위해 필요
+- **SMTP 설정**: 이메일 인증을 위해 필요 (선택사항)
 
-## 📖 상세 사용법
+## 🌟 주요 기능
 
-### 콘텐츠 생성 과정
-1. **키워드 입력**: 메인 키워드 및 추가 키워드 설정
-2. **설정 선택**: 콘텐츠 타입, 톤, 타겟 독자 선택
-3. **생성 시작**: AI가 5단계로 콘텐츠 생성
-4. **결과 확인**: 생성된 콘텐츠 검토 및 편집
-5. **포스팅**: WordPress 사이트에 자동 포스팅
-
-### 키워드 분석
-- **검색량 분석**: 월간 검색량 및 트렌드
-- **경쟁 강도**: 키워드 경쟁 난이도 분석
-- **관련 키워드**: 자동 추천 키워드 목록
-- **SEO 제안**: 최적화 방안 제시
+### AI 콘텐츠 생성
+- 키워드 기반 자동 콘텐츠 생성
+- SEO 최적화된 메타데이터 자동 생성
+- 다양한 콘텐츠 유형 지원 (블로그, 기사, 튜토리얼 등)
+- 실시간 진행상황 표시
 
 ### WordPress 연동
-1. **설정 페이지** 이동
-2. **WordPress 탭** 선택
-3. **사이트 정보** 입력
-4. **연결 테스트** 실행
-5. **자동 포스팅** 활성화
+- 다중 WordPress 사이트 관리
+- 원클릭 자동 포스팅
+- REST API 기반 안정적인 연동
+- 포스트 상태 관리 (초안/발행/비공개)
 
-## 🏗️ 아키텍처
+### 사용자 관리
+- 이메일 인증 기반 회원가입
+- JWT 토큰 기반 보안 인증
+- 사용자별 설정 관리
+- 세션 관리 및 자동 로그아웃
 
-### 백엔드 (FastAPI)
-```
-server/
-├── src/
-│   ├── main.py              # 메인 애플리케이션
-│   ├── routes/              # API 라우터
-│   │   ├── auth.py          # 인증 관련
-│   │   ├── content.py       # 콘텐츠 생성
-│   │   ├── seo.py           # SEO 분석
-│   │   ├── wordpress.py     # WordPress 연동
-│   │   └── keyword_analysis.py # 키워드 분석
-│   ├── services/            # 비즈니스 로직
-│   │   ├── content_generator.py
-│   │   ├── seo_service.py
-│   │   ├── wordpress_service.py
-│   │   └── auth_service.py
-│   ├── models/              # 데이터 모델
-│   └── utils/               # 유틸리티
-└── requirements.txt
-```
+### SEO 최적화
+- 실시간 SEO 분석
+- 키워드 밀도 최적화
+- 메타 태그 자동 생성
+- 구조화된 데이터 지원
 
-### 프론트엔드 (React)
-```
-client/
-├── src/
-│   ├── App.jsx              # 메인 앱
-│   ├── components/          # React 컴포넌트
-│   │   ├── Dashboard.jsx    # 대시보드
-│   │   ├── ContentGenerator.jsx # 콘텐츠 생성
-│   │   ├── KeywordAnalyzer.jsx  # 키워드 분석
-│   │   ├── Settings.jsx     # 설정
-│   │   ├── Sidebar.jsx      # 사이드바
-│   │   └── Header.jsx       # 헤더
-│   ├── contexts/            # React 컨텍스트
-│   └── utils/               # 유틸리티
-├── package.json
-└── vite.config.js
-```
+## 🎨 UI/UX 개선
 
-## 🔐 보안
+Writesonic을 참고하여 완전히 새롭게 디자인된 사용자 인터페이스:
 
-- **JWT 인증**: 안전한 토큰 기반 인증
-- **비밀번호 해싱**: bcrypt를 이용한 안전한 해싱
-- **CORS 설정**: 허용된 도메인만 접근 가능
-- **API 키 보안**: 환경변수를 통한 안전한 관리
-- **입력 검증**: 모든 사용자 입력 검증
+- **현대적인 디자인**: 그라데이션과 카드 기반 레이아웃
+- **직관적인 네비게이션**: 명확한 정보 계층구조
+- **반응형 디자인**: 모든 디바이스에서 최적화된 경험
+- **시각적 피드백**: 호버 효과, 애니메이션, 진행 표시
 
-## 🚀 배포
+## 🔧 기술 스택
 
-### 도커 배포
-```bash
-# 도커 이미지 빌드
-docker-compose build
+### 백엔드
+- **FastAPI**: 고성능 Python 웹 프레임워크
+- **SQLAlchemy**: ORM 및 데이터베이스 관리
+- **JWT**: 보안 토큰 기반 인증
+- **OpenAI API**: AI 콘텐츠 생성
 
-# 서비스 시작
-docker-compose up -d
-```
+### 프론트엔드
+- **React**: 모던 JavaScript 프레임워크
+- **Vite**: 빠른 개발 서버 및 빌드 도구
+- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
+- **Shadcn/UI**: 고품질 React 컴포넌트
+- **Lucide Icons**: 아름다운 아이콘 세트
 
-### 클라우드 배포
-- **AWS EC2**: Ubuntu 22.04 LTS 권장
-- **Vercel**: 프론트엔드 배포
-- **Railway**: 백엔드 배포
-- **DigitalOcean**: 풀스택 배포
+## 📈 성능 및 보안
 
-## 🔧 환경변수
+### 성능 최적화
+- 비동기 처리로 빠른 응답 시간
+- 효율적인 데이터베이스 쿼리
+- 정적 파일 캐싱
+- 이미지 최적화
 
-### 백엔드 (.env)
-```env
-DATABASE_URL=sqlite:///./wordpress_auto_poster.db
-SECRET_KEY=your-secret-key-here
-OPENAI_API_KEY=your-openai-api-key
-ALLOWED_ORIGINS=http://localhost:3000
-```
+### 보안 기능
+- API 키 암호화 저장
+- CORS 설정으로 안전한 크로스 오리진 요청
+- 입력 데이터 검증 및 살균
+- 세션 타임아웃 관리
 
-### 프론트엔드 (.env)
-```env
-VITE_API_BASE_URL=http://localhost:8000
-VITE_APP_NAME=WordPress Auto Poster
-VITE_APP_VERSION=2.0.0
-```
+## 🚀 프로덕션 배포
 
-## 🐛 문제 해결
+### 지원 환경
+- **Ubuntu 20.04+**
+- **CentOS 8+**
+- **Docker** (선택사항)
+- **Nginx** (리버스 프록시)
 
-### 일반적인 문제
-1. **백엔드 시작 실패**: 의존성 재설치 및 포트 확인
-2. **프론트엔드 빌드 오류**: 노드 모듈 재설치
-3. **WordPress 연동 실패**: URL 및 인증 정보 확인
-4. **OpenAI API 오류**: API 키 및 크레딧 확인
+### 배포 옵션
+1. **전통적인 서버 배포**: systemd 서비스 등록
+2. **Docker 컨테이너**: docker-compose 사용
+3. **클라우드 배포**: AWS, GCP, Azure 지원
 
-### 로그 확인
-```bash
-# 백엔드 로그
-tail -f server/logs/app.log
+## 📞 지원 및 문의
 
-# 프론트엔드 로그
-# 브라우저 개발자 도구 > Console
-```
+### 문서
+- **사용자 매뉴얼**: `wordpress-auto-poster-manual.pdf`
+- **API 문서**: `/docs` 엔드포인트 (Swagger UI)
 
-## 📊 성능
-
-- **응답 시간**: 평균 < 2초
-- **동시 사용자**: 100+ 지원
-- **콘텐츠 생성**: 분당 10+ 포스트
-- **메모리 사용량**: < 512MB
-
-## 🤝 기여
-
-1. **Fork** 저장소
-2. **Feature 브랜치** 생성 (`git checkout -b feature/AmazingFeature`)
-3. **변경사항 커밋** (`git commit -m 'Add some AmazingFeature'`)
-4. **브랜치 푸시** (`git push origin feature/AmazingFeature`)
-5. **Pull Request** 생성
+### 커뮤니티
+- **GitHub Issues**: 버그 리포트 및 기능 요청
+- **이메일 지원**: support@wordpress-auto-poster.com
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+MIT License - 자세한 내용은 `LICENSE` 파일 참조
 
 ## 🙏 감사의 말
 
-- **OpenAI**: GPT API 제공
-- **Writesonic**: UI/UX 영감
-- **React 커뮤니티**: 오픈소스 컴포넌트
-- **FastAPI**: 빠르고 현대적인 API 프레임워크
-
-## 📞 지원
-
-- **이슈 리포팅**: [GitHub Issues](https://github.com/Hyeon0129/wordpress-auto-poster/issues)
-- **기능 요청**: [Feature Request](https://github.com/Hyeon0129/wordpress-auto-poster/issues/new?template=feature_request.md)
-- **문서 개선**: [Documentation](https://github.com/Hyeon0129/wordpress-auto-poster/wiki)
+이 프로젝트는 다음 오픈소스 프로젝트들의 도움을 받았습니다:
+- OpenAI API
+- FastAPI
+- React
+- Tailwind CSS
+- Shadcn/UI
 
 ---
 
-<div align="center">
+**버전**: 2.0.0  
+**릴리스 날짜**: 2024년 1월 20일  
+**개발자**: WordPress Auto Poster 팀
 
-**WordPress Auto Poster v2.0** - AI 기반 콘텐츠 자동화의 새로운 표준
-
-Made with ❤️ by [Hyeon0129](https://github.com/Hyeon0129)
-
-[⬆ 맨 위로](#wordpress-auto-poster-v20---ai-기반-콘텐츠-자동화-플랫폼)
-
-</div>
+🌟 **이제 프로덕션 환경에서 바로 사용할 수 있습니다!** 🌟
 
