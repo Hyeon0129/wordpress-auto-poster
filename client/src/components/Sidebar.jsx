@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '../lib/utils'
+import { useAuth } from '../contexts/AuthContext'
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
@@ -90,7 +91,17 @@ export default function Sidebar({ isOpen, onToggle }) {
       </nav>
 
       {/* Footer */}
-      <div className="absolute bottom-4 left-0 right-0 px-3">
+      <div className="absolute bottom-4 left-0 right-0 px-3 space-y-2">
+        <div className="flex items-center space-x-2">
+          <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+            {useAuth().user?.username?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          {isOpen && (
+            <span className="text-sm text-sidebar-foreground">
+              {useAuth().user?.username}
+            </span>
+          )}
+        </div>
         <div className={cn(
           "p-3 bg-sidebar-accent rounded-lg transition-opacity duration-300",
           isOpen ? "opacity-100" : "opacity-0"
