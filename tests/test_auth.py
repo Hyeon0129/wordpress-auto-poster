@@ -1,7 +1,37 @@
 from fastapi.testclient import TestClient
-import sys, os
+import sys, os, tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'server'))
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from src.main import app
+from src.db import Base, get_db
+
+
+def setup_module(module):
+    fd, path = tempfile.mkstemp()
+    os.close(fd)
+    engine = create_engine(
+        f"sqlite:///{path}", connect_args={"check_same_thread": False}
+    )
+    TestingSessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, bind=engine
+    )
+    Base.metadata.create_all(bind=engine)
+
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    module.TEST_DB_PATH = path
+
+
+def teardown_module(module):
+    os.unlink(module.TEST_DB_PATH)
 
 client = TestClient(app)
 
