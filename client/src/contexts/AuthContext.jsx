@@ -250,6 +250,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     token,
+    isAuthenticated: !!user, // ✅ 여기에 추가
     login,
     register,
     logout,
