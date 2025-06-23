@@ -24,6 +24,7 @@ import {
   Edit
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../lib/api'
 
 export default function Settings() {
   const { token, user } = useAuth()
@@ -65,7 +66,7 @@ export default function Settings() {
   const loadSettings = async () => {
     try {
       // WordPress 사이트 목록 로드
-      const wpResponse = await fetch('http://localhost:5000/api/wordpress/sites', {
+      const wpResponse = await fetch(`${API_BASE_URL}/api/wordpress/sites`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (wpResponse.ok) {
@@ -74,7 +75,7 @@ export default function Settings() {
       }
 
       // LLM 제공자 목록 로드
-      const llmResponse = await fetch('http://localhost:5000/api/llm/providers', {
+      const llmResponse = await fetch(`${API_BASE_URL}/api/llm/providers`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (llmResponse.ok) {
@@ -95,7 +96,7 @@ export default function Settings() {
 
     setIsSaving(true)
     try {
-      const response = await fetch('http://localhost:5000/api/wordpress/sites', {
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +124,7 @@ export default function Settings() {
   const handleTestWpConnection = async (siteId, siteData) => {
     setIsTesting(true)
     try {
-      const response = await fetch(`http://localhost:5000/api/wordpress/sites/${siteId}/test-connection`, {
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites/${siteId}/test-connection`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ export default function Settings() {
 
     setIsSaving(true)
     try {
-      const response = await fetch('http://localhost:5000/api/llm/providers', {
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +191,7 @@ export default function Settings() {
   const handleTestLlmProvider = async (providerId, providerData) => {
     setIsTesting(true)
     try {
-      const response = await fetch(`http://localhost:5000/api/llm/providers/${providerId}/test`, {
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers/${providerId}/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -217,7 +218,7 @@ export default function Settings() {
 
   const handleActivateLlmProvider = async (providerId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/llm/providers/${providerId}/activate`, {
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers/${providerId}/activate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

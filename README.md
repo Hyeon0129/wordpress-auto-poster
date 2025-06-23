@@ -21,6 +21,8 @@ npm install
 npm run dev
 ```
 
+Set `VITE_API_BASE_URL` to point the frontend to your backend (defaults to `http://localhost:8000`).
+
 ### Running Tests
 ```bash
 pytest -q

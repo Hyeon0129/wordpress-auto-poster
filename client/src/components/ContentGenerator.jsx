@@ -20,6 +20,7 @@ import {
   Clock
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../lib/api'
 
 export default function ContentGenerator() {
   const { token } = useAuth()
@@ -54,7 +55,7 @@ export default function ContentGenerator() {
     setIsGenerating(true)
     
     try {
-      const response = await fetch('http://localhost:5000/api/content/generate', {
+      const response = await fetch(`${API_BASE_URL}/api/content/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +94,7 @@ export default function ContentGenerator() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/content/preview', {
+      const response = await fetch(`${API_BASE_URL}/api/content/preview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ export default function ContentGenerator() {
 
     try {
       // 실제로는 선택된 워드프레스 사이트에 포스팅
-      const response = await fetch('http://localhost:5000/api/wordpress/sites/1/posts', {
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites/1/posts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
