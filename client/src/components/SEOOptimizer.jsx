@@ -19,6 +19,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../lib/api'
 
 export default function SEOOptimizer() {
   const { token } = useAuth()
@@ -41,7 +42,7 @@ export default function SEOOptimizer() {
     setIsAnalyzing(true)
     
     try {
-      const response = await fetch('http://localhost:5000/api/seo/analyze', {
+      const response = await fetch(`${API_BASE_URL}/api/seo/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

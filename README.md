@@ -1,22 +1,34 @@
 # WordPress Auto Poster
 
-This is a personal project for automating blog post submissions to a WordPress site.
-
-The goal is to save time by reducing repetitive tasks like manual posting, and to streamline the publishing workflow through a simple UI and backend system.
-
-## Features
-
-- Automatically post articles to WordPress using the XML-RPC API
-- Simple frontend interface for managing content
-- Lightweight backend for handling post data and user management
+This project provides a simple platform for creating AI generated posts and publishing them to WordPress.  The backend is built with FastAPI and relies on JWT for authentication.  A small React frontend shows posting progress and allows you to manage your WordPress connection.
 
 ## Getting Started
 
-### Backend
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
 
+### Backend
 ```bash
-cd wordpress-auto-poster-backend
-python -m venv venv
-source venv/bin/activate
 pip install -r requirements.txt
-python src/main.py
+uvicorn server.src.main:app --reload
+```
+
+### Frontend
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Set `VITE_API_BASE_URL` to point the frontend to your backend (defaults to `http://localhost:8000`).
+
+### Running Tests
+```bash
+pytest -q
+```
+
+## Usage
+1. Register with `/api/auth/register` and log in via `/api/auth/login` to obtain a JWT.
+2. Use the settings screen to connect your WordPress account (`/api/wordpress/sites`).
+3. Generate content with `/api/content/generate` and publish directly from the dashboard.

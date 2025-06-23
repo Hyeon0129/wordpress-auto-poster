@@ -16,6 +16,7 @@ import {
   BarChart3
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../lib/api'
 
 export default function KeywordAnalyzer() {
   const { token } = useAuth()
@@ -36,7 +37,7 @@ export default function KeywordAnalyzer() {
     
     try {
       // 키워드 분석
-      const analysisResponse = await fetch('http://localhost:5000/api/content/analyze-keyword', {
+      const analysisResponse = await fetch(`${API_BASE_URL}/api/content/analyze-keyword`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ export default function KeywordAnalyzer() {
       }
 
       // 관련 키워드 조회
-      const relatedResponse = await fetch('http://localhost:5000/api/seo/keywords/related', {
+      const relatedResponse = await fetch(`${API_BASE_URL}/api/seo/keywords/related`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +67,7 @@ export default function KeywordAnalyzer() {
       }
 
       // SEO 제안 조회
-      const suggestionsResponse = await fetch('http://localhost:5000/api/seo/suggestions', {
+      const suggestionsResponse = await fetch(`${API_BASE_URL}/api/seo/suggestions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
