@@ -14,6 +14,7 @@ from src.routes.wordpress import router as wordpress_router
 from src.routes.content import router as content_router
 from src.routes.llm import router as llm_router
 from src.routes.seo import router as seo_router
+from src.routes.keyword_analysis import router as keyword_analysis_router
 
 
 app = FastAPI()
@@ -33,6 +34,7 @@ app.include_router(wordpress_router, prefix="/api/wordpress")
 app.include_router(content_router, prefix="/api/content")
 app.include_router(llm_router, prefix="/api/llm")
 app.include_router(seo_router, prefix="/api/seo")
+app.include_router(keyword_analysis_router, prefix="/api/keyword-analysis")
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.isdir(static_dir):

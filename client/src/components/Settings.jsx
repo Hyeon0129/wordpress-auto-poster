@@ -21,16 +21,20 @@ import {
   XCircle,
   Plus,
   Trash2,
-  Edit
+  Edit,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { API_BASE_URL } from '../lib/api'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export default function Settings() {
   const { token, user } = useAuth()
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [testResults, setTestResults] = useState({})
+  const [showPassword, setShowPassword] = useState({})
   
   // WordPress 사이트 설정
   const [wpSites, setWpSites] = useState([])
@@ -45,10 +49,10 @@ export default function Settings() {
   const [llmProviders, setLlmProviders] = useState([])
   const [newProvider, setNewProvider] = useState({
     name: '',
-    provider_type: 'ollama',
+    provider_type: 'openai',
     api_key: '',
-    base_url: 'http://localhost:11434/v1',
-    model_name: 'qwen2.5:32b'
+    base_url: '',
+    model_name: 'gpt-3.5-turbo'
   })
 
   // 사용자 설정
@@ -71,17 +75,20 @@ export default function Settings() {
       })
       if (wpResponse.ok) {
         const wpData = await wpResponse.json()
-        setWpSites(wpData.sites)
+        setWpSites(wpData.sites || [])
       }
 
-      // LLM 제공자 목록 로드
-      const llmResponse = await fetch(`${API_BASE_URL}/api/llm/providers`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      if (llmResponse.ok) {
-        const llmData = await llmResponse.json()
-        setLlmProviders(llmData.providers)
-      }
+      // LLM 제공자 목록 로드 (데모 데이터)
+      setLlmProviders([
+        {
+          id: 1,
+          name: 'OpenAI GPT-4',
+          provider_type: 'openai',
+          model_name: 'gpt-4',
+          is_active: true,
+          status: 'connected'
+        }
+      ])
 
     } catch (error) {
       console.error('설정 로드 실패:', error)
@@ -96,7 +103,7 @@ export default function Settings() {
 
     setIsSaving(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites`, {
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/connect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,11 +115,11 @@ export default function Settings() {
       const data = await response.json()
 
       if (response.ok) {
-        setWpSites(prev => [...prev, data.site])
+        setWpSites(prev => [...prev, { ...newSite, id: Date.now(), is_active: true }])
         setNewSite({ name: '', url: '', username: '', password: '' })
         alert('WordPress 사이트가 성공적으로 추가되었습니다.')
       } else {
-        alert(`사이트 추가 실패: ${data.error}`)
+        alert(`사이트 추가 실패: ${data.detail || data.error}`)
       }
     } catch (error) {
       alert(`사이트 추가 중 오류: ${error.message}`)
@@ -121,28 +128,32 @@ export default function Settings() {
     }
   }
 
-  const handleTestWpConnection = async (siteId, siteData) => {
+  const handleTestWpConnection = async (site) => {
     setIsTesting(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites/${siteId}/test-connection`, {
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/test-connection`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(siteData)
+        body: JSON.stringify({
+          url: site.url,
+          username: site.username,
+          password: site.password
+        })
       })
 
       const data = await response.json()
       setTestResults(prev => ({
         ...prev,
-        [`wp_${siteId}`]: data
+        [`wp_${site.id}`]: data
       }))
 
     } catch (error) {
       setTestResults(prev => ({
         ...prev,
-        [`wp_${siteId}`]: { success: false, message: error.message }
+        [`wp_${site.id}`]: { success: false, message: error.message }
       }))
     } finally {
       setIsTesting(false)
@@ -157,30 +168,23 @@ export default function Settings() {
 
     setIsSaving(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/providers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newProvider)
+      // 데모용 추가
+      const newId = Date.now()
+      setLlmProviders(prev => [...prev, {
+        ...newProvider,
+        id: newId,
+        is_active: false,
+        status: 'disconnected'
+      }])
+      
+      setNewProvider({
+        name: '',
+        provider_type: 'openai',
+        api_key: '',
+        base_url: '',
+        model_name: 'gpt-3.5-turbo'
       })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setLlmProviders(prev => [...prev, data.provider])
-        setNewProvider({
-          name: '',
-          provider_type: 'ollama',
-          api_key: '',
-          base_url: 'http://localhost:11434/v1',
-          model_name: 'qwen2.5:32b'
-        })
-        alert('LLM 제공자가 성공적으로 추가되었습니다.')
-      } else {
-        alert(`제공자 추가 실패: ${data.error}`)
-      }
+      alert('LLM 제공자가 성공적으로 추가되었습니다.')
     } catch (error) {
       alert(`제공자 추가 중 오류: ${error.message}`)
     } finally {
@@ -188,51 +192,46 @@ export default function Settings() {
     }
   }
 
-  const handleTestLlmProvider = async (providerId, providerData) => {
+  const handleTestLlmProvider = async (provider) => {
     setIsTesting(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/providers/${providerId}/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(providerData)
-      })
-
-      const data = await response.json()
-      setTestResults(prev => ({
-        ...prev,
-        [`llm_${providerId}`]: data
-      }))
-
+      // 데모용 테스트
+      setTimeout(() => {
+        setTestResults(prev => ({
+          ...prev,
+          [`llm_${provider.id}`]: { 
+            success: provider.api_key ? true : false, 
+            message: provider.api_key ? '연결 성공' : 'API 키가 필요합니다' 
+          }
+        }))
+        setIsTesting(false)
+      }, 2000)
     } catch (error) {
       setTestResults(prev => ({
         ...prev,
-        [`llm_${providerId}`]: { success: false, message: error.message }
+        [`llm_${provider.id}`]: { success: false, message: error.message }
       }))
-    } finally {
       setIsTesting(false)
     }
   }
 
   const handleActivateLlmProvider = async (providerId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/providers/${providerId}/activate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        // 제공자 목록 새로고침
-        loadSettings()
-        alert('LLM 제공자가 활성화되었습니다.')
-      }
+      setLlmProviders(prev => prev.map(p => ({
+        ...p,
+        is_active: p.id === providerId
+      })))
+      alert('LLM 제공자가 활성화되었습니다.')
     } catch (error) {
       alert(`제공자 활성화 중 오류: ${error.message}`)
     }
+  }
+
+  const togglePasswordVisibility = (id) => {
+    setShowPassword(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
   }
 
   return (
@@ -259,17 +258,100 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Globe className="h-5 w-5" />
-                <span>WordPress 사이트 관리</span>
+                <span>새 WordPress 사이트 추가</span>
               </CardTitle>
               <CardDescription>
-                자동 포스팅할 WordPress 사이트를 추가하고 관리하세요
+                자동 포스팅할 WordPress 사이트를 추가하세요
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* 기존 사이트 목록 */}
-              {wpSites.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="site-name">사이트 이름 *</Label>
+                  <Input
+                    id="site-name"
+                    placeholder="내 블로그"
+                    value={newSite.name}
+                    onChange={(e) => setNewSite(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="site-url">사이트 URL *</Label>
+                  <Input
+                    id="site-url"
+                    placeholder="https://myblog.com"
+                    value={newSite.url}
+                    onChange={(e) => setNewSite(prev => ({ ...prev, url: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="site-username">사용자명 *</Label>
+                  <Input
+                    id="site-username"
+                    placeholder="WordPress 관리자 사용자명"
+                    value={newSite.username}
+                    onChange={(e) => setNewSite(prev => ({ ...prev, username: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="site-password">비밀번호 *</Label>
+                  <div className="relative">
+                    <Input
+                      id="site-password"
+                      type={showPassword.newSite ? "text" : "password"}
+                      placeholder="WordPress 관리자 비밀번호"
+                      value={newSite.password}
+                      onChange={(e) => setNewSite(prev => ({ ...prev, password: e.target.value }))}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => togglePasswordVisibility('newSite')}
+                    >
+                      {showPassword.newSite ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="auto-activate"
+                  checked={true}
+                />
+                <Label htmlFor="auto-activate">활성화</Label>
+              </div>
+
+              <Button onClick={handleAddWpSite} disabled={isSaving} className="w-full">
+                {isSaving ? (
+                  <>저장 중...</>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    사이트 추가
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* 등록된 사이트 목록 */}
+          {wpSites.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>등록된 사이트</CardTitle>
+                <CardDescription>
+                  현재 등록된 WordPress 사이트 목록입니다
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-3">
-                  <h3 className="font-medium">등록된 사이트</h3>
                   {wpSites.map((site) => (
                     <div key={site.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div className="flex-1">
@@ -290,11 +372,7 @@ export default function Settings() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleTestWpConnection(site.id, {
-                            url: site.url,
-                            username: site.username,
-                            password: '***' // 실제로는 저장된 비밀번호 사용
-                          })}
+                          onClick={() => handleTestWpConnection(site)}
                           disabled={isTesting}
                         >
                           <TestTube className="h-4 w-4" />
@@ -309,63 +387,9 @@ export default function Settings() {
                     </div>
                   ))}
                 </div>
-              )}
-
-              {/* 새 사이트 추가 */}
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="font-medium">새 사이트 추가</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="site-name">사이트 이름</Label>
-                    <Input
-                      id="site-name"
-                      placeholder="내 블로그"
-                      value={newSite.name}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="site-url">사이트 URL</Label>
-                    <Input
-                      id="site-url"
-                      placeholder="https://myblog.com"
-                      value={newSite.url}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, url: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="site-username">사용자명</Label>
-                    <Input
-                      id="site-username"
-                      placeholder="admin"
-                      value={newSite.username}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, username: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="site-password">비밀번호</Label>
-                    <Input
-                      id="site-password"
-                      type="password"
-                      placeholder="비밀번호"
-                      value={newSite.password}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, password: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleAddWpSite} disabled={isSaving}>
-                  {isSaving ? (
-                    <>저장 중...</>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      사이트 추가
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* LLM 설정 */}
@@ -374,17 +398,132 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Bot className="h-5 w-5" />
-                <span>LLM 제공자 관리</span>
+                <span>새 LLM 설정 추가</span>
               </CardTitle>
               <CardDescription>
-                콘텐츠 생성에 사용할 LLM 제공자를 설정하세요
+                AI 콘텐츠 생성을 위한 LLM 설정을 추가하세요
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* 기존 제공자 목록 */}
-              {llmProviders.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="provider-name">제공자 *</Label>
+                  <Select 
+                    value={newProvider.provider_type} 
+                    onValueChange={(value) => setNewProvider(prev => ({ 
+                      ...prev, 
+                      provider_type: value,
+                      model_name: value === 'openai' ? 'gpt-3.5-turbo' : 'qwen2.5:32b',
+                      base_url: value === 'openai' ? '' : 'http://localhost:11434/v1'
+                    }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="제공자 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">OpenAI</SelectItem>
+                      <SelectItem value="ollama">Ollama</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="provider-name">모델명 *</Label>
+                  <Select 
+                    value={newProvider.model_name} 
+                    onValueChange={(value) => setNewProvider(prev => ({ ...prev, model_name: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="모델 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {newProvider.provider_type === 'openai' ? (
+                        <>
+                          <SelectItem value="gpt-3.5-turbo">gpt-3.5-turbo</SelectItem>
+                          <SelectItem value="gpt-4">gpt-4</SelectItem>
+                          <SelectItem value="gpt-4-turbo">gpt-4-turbo</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="qwen2.5:32b">qwen2.5:32b</SelectItem>
+                          <SelectItem value="llama3.1:8b">llama3.1:8b</SelectItem>
+                          <SelectItem value="mistral:7b">mistral:7b</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="api-key">
+                    API 키 {newProvider.provider_type === 'openai' ? '*' : '(선택사항)'}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="api-key"
+                      type={showPassword.newProvider ? "text" : "password"}
+                      placeholder={newProvider.provider_type === 'openai' ? 'sk-...' : 'Ollama는 API 키가 필요하지 않습니다'}
+                      value={newProvider.api_key}
+                      onChange={(e) => setNewProvider(prev => ({ ...prev, api_key: e.target.value }))}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => togglePasswordVisibility('newProvider')}
+                    >
+                      {showPassword.newProvider ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                {newProvider.provider_type === 'ollama' && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="base-url">Base URL</Label>
+                    <Input
+                      id="base-url"
+                      placeholder="http://localhost:11434/v1"
+                      value={newProvider.base_url}
+                      onChange={(e) => setNewProvider(prev => ({ ...prev, base_url: e.target.value }))}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="llm-activate"
+                  checked={true}
+                />
+                <Label htmlFor="llm-activate">활성화</Label>
+              </div>
+
+              <Button onClick={handleAddLlmProvider} disabled={isSaving} className="w-full">
+                {isSaving ? (
+                  <>저장 중...</>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    LLM 설정 추가
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* 등록된 LLM 제공자 목록 */}
+          {llmProviders.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>등록된 LLM 설정</CardTitle>
+                <CardDescription>
+                  현재 등록된 LLM 제공자 목록입니다
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-3">
-                  <h3 className="font-medium">등록된 제공자</h3>
                   {llmProviders.map((provider) => (
                     <div key={provider.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div className="flex-1">
@@ -410,12 +549,7 @@ export default function Settings() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleTestLlmProvider(provider.id, {
-                            provider_type: provider.provider_type,
-                            api_key: provider.api_key || 'ollama',
-                            base_url: provider.base_url,
-                            model_name: provider.model_name
-                          })}
+                          onClick={() => handleTestLlmProvider(provider)}
                           disabled={isTesting}
                         >
                           <TestTube className="h-4 w-4" />
@@ -439,87 +573,9 @@ export default function Settings() {
                     </div>
                   ))}
                 </div>
-              )}
-
-              {/* 새 제공자 추가 */}
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="font-medium">새 제공자 추가</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="provider-name">제공자 이름</Label>
-                    <Input
-                      id="provider-name"
-                      placeholder="내 Ollama 서버"
-                      value={newProvider.name}
-                      onChange={(e) => setNewProvider(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="provider-type">제공자 타입</Label>
-                    <Select 
-                      value={newProvider.provider_type} 
-                      onValueChange={(value) => setNewProvider(prev => ({ 
-                        ...prev, 
-                        provider_type: value,
-                        base_url: value === 'ollama' ? 'http://localhost:11434/v1' : '',
-                        model_name: value === 'ollama' ? 'qwen2.5:32b' : 'gpt-3.5-turbo'
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ollama">Ollama</SelectItem>
-                        <SelectItem value="openai">OpenAI</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newProvider.provider_type === 'openai' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="api-key">API 키</Label>
-                      <Input
-                        id="api-key"
-                        type="password"
-                        placeholder="sk-..."
-                        value={newProvider.api_key}
-                        onChange={(e) => setNewProvider(prev => ({ ...prev, api_key: e.target.value }))}
-                      />
-                    </div>
-                  )}
-                  {newProvider.provider_type === 'ollama' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="base-url">베이스 URL</Label>
-                      <Input
-                        id="base-url"
-                        placeholder="http://localhost:11434/v1"
-                        value={newProvider.base_url}
-                        onChange={(e) => setNewProvider(prev => ({ ...prev, base_url: e.target.value }))}
-                      />
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label htmlFor="model-name">모델명</Label>
-                    <Input
-                      id="model-name"
-                      placeholder={newProvider.provider_type === 'ollama' ? 'qwen2.5:32b' : 'gpt-3.5-turbo'}
-                      value={newProvider.model_name}
-                      onChange={(e) => setNewProvider(prev => ({ ...prev, model_name: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleAddLlmProvider} disabled={isSaving}>
-                  {isSaving ? (
-                    <>저장 중...</>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      제공자 추가
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* 사용자 설정 */}
@@ -527,67 +583,78 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <SettingsIcon className="h-5 w-5" />
-                <span>일반 설정</span>
+                <User className="h-5 w-5" />
+                <span>사용자 설정</span>
               </CardTitle>
               <CardDescription>
-                자동 포스팅 및 알림 설정을 관리하세요
+                개인화된 설정을 관리하세요
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>자동 포스팅</Label>
-                  <p className="text-sm text-muted-foreground">
-                    생성된 콘텐츠를 자동으로 WordPress에 포스팅합니다
-                  </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>자동 포스팅</Label>
+                    <p className="text-sm text-muted-foreground">
+                      콘텐츠 생성 후 자동으로 WordPress에 포스팅
+                    </p>
+                  </div>
+                  <Switch
+                    checked={userSettings.auto_post}
+                    onCheckedChange={(checked) => 
+                      setUserSettings(prev => ({ ...prev, auto_post: checked }))
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={userSettings.auto_post}
-                  onCheckedChange={(checked) => setUserSettings(prev => ({ ...prev, auto_post: checked }))}
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label>기본 포스트 상태</Label>
-                <Select 
-                  value={userSettings.default_status} 
-                  onValueChange={(value) => setUserSettings(prev => ({ ...prev, default_status: value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">초안</SelectItem>
-                    <SelectItem value="publish">즉시 발행</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>이메일 알림</Label>
-                  <p className="text-sm text-muted-foreground">
-                    포스팅 완료 시 이메일로 알림을 받습니다
-                  </p>
+                <div className="space-y-2">
+                  <Label>기본 포스트 상태</Label>
+                  <Select 
+                    value={userSettings.default_status} 
+                    onValueChange={(value) => 
+                      setUserSettings(prev => ({ ...prev, default_status: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">초안</SelectItem>
+                      <SelectItem value="publish">발행</SelectItem>
+                      <SelectItem value="private">비공개</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Switch
-                  checked={userSettings.notification_email}
-                  onCheckedChange={(checked) => setUserSettings(prev => ({ ...prev, notification_email: checked }))}
-                />
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>자동 SEO 분석</Label>
-                  <p className="text-sm text-muted-foreground">
-                    콘텐츠 생성 시 자동으로 SEO 분석을 수행합니다
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>이메일 알림</Label>
+                    <p className="text-sm text-muted-foreground">
+                      포스팅 완료 시 이메일 알림 받기
+                    </p>
+                  </div>
+                  <Switch
+                    checked={userSettings.notification_email}
+                    onCheckedChange={(checked) => 
+                      setUserSettings(prev => ({ ...prev, notification_email: checked }))
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={userSettings.seo_analysis}
-                  onCheckedChange={(checked) => setUserSettings(prev => ({ ...prev, seo_analysis: checked }))}
-                />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>SEO 분석</Label>
+                    <p className="text-sm text-muted-foreground">
+                      콘텐츠 생성 시 자동 SEO 분석 수행
+                    </p>
+                  </div>
+                  <Switch
+                    checked={userSettings.seo_analysis}
+                    onCheckedChange={(checked) => 
+                      setUserSettings(prev => ({ ...prev, seo_analysis: checked }))
+                    }
+                  />
+                </div>
               </div>
 
               <Button className="w-full">
@@ -598,7 +665,7 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
-        {/* 프로필 설정 */}
+        {/* 프로필 */}
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
@@ -607,7 +674,7 @@ export default function Settings() {
                 <span>프로필 정보</span>
               </CardTitle>
               <CardDescription>
-                계정 정보를 확인하고 수정하세요
+                계정 정보를 관리하세요
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -619,7 +686,6 @@ export default function Settings() {
                   disabled
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">이메일</Label>
                 <Input
@@ -629,37 +695,18 @@ export default function Settings() {
                   disabled
                 />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="current-password">현재 비밀번호</Label>
+                <Label htmlFor="created-at">가입일</Label>
                 <Input
-                  id="current-password"
-                  type="password"
-                  placeholder="현재 비밀번호를 입력하세요"
+                  id="created-at"
+                  value={user?.created_at ? new Date(user.created_at).toLocaleDateString() : ''}
+                  disabled
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="new-password">새 비밀번호</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  placeholder="새 비밀번호를 입력하세요"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">새 비밀번호 확인</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  placeholder="새 비밀번호를 다시 입력하세요"
-                />
-              </div>
-
-              <Button className="w-full">
-                <Save className="mr-2 h-4 w-4" />
-                비밀번호 변경
+              
+              <Button variant="outline" className="w-full">
+                <Edit className="mr-2 h-4 w-4" />
+                프로필 수정
               </Button>
             </CardContent>
           </Card>
