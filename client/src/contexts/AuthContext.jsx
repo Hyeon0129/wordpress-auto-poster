@@ -1,219 +1,268 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext, useState, useEffect } from 'react'
 
-const AuthContext = createContext();
+const AuthContext = createContext()
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext)
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
-};
+  return context
+}
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [token, setToken] = useState(localStorage.getItem('access_token'))
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    if (token) {
+      fetchUser()
+    } else {
+      setLoading(false)
+    }
+  }, [token])
 
-  const checkAuthStatus = async () => {
+  const fetchUser = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      });
+      })
 
       if (response.ok) {
-        const userData = await response.json();
-        setUser(userData.user);
-        setIsAuthenticated(true);
+        const data = await response.json()
+        setUser(data.data.user)
       } else {
-        // 토큰이 유효하지 않으면 제거
-        localStorage.removeItem('token');
-        setUser(null);
-        setIsAuthenticated(false);
+        logout()
       }
     } catch (error) {
-      console.error('인증 상태 확인 실패:', error);
-      localStorage.removeItem('token');
-      setUser(null);
-      setIsAuthenticated(false);
+      console.error('Failed to fetch user:', error)
+      logout()
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const login = async (email, password) => {
+  const login = async (username, password, twoFactorCode = null) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password }),
-      });
+        body: JSON.stringify({
+          username,
+          password,
+          two_factor_code: twoFactorCode
+        })
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
-      if (response.ok) {
-        localStorage.setItem('token', data.access_token);
-        setUser(data.user);
-        setIsAuthenticated(true);
-        
-        // 로그인 성공 후 대시보드로 리다이렉션
-        navigate('/dashboard');
-        
-        return { success: true, message: '로그인 성공' };
+      if (data.success) {
+        const { access_token, refresh_token, user } = data.data
+        localStorage.setItem('access_token', access_token)
+        localStorage.setItem('refresh_token', refresh_token)
+        setToken(access_token)
+        setUser(user)
+        return { success: true, user }
+      } else if (data.requires_2fa) {
+        return { success: false, requires2FA: true, message: data.message }
       } else {
-        return { success: false, message: data.detail || '로그인 실패' };
+        return { success: false, message: data.message || '로그인에 실패했습니다.' }
       }
     } catch (error) {
-      console.error('로그인 오류:', error);
-      return { success: false, message: '네트워크 오류가 발생했습니다.' };
+      console.error('Login error:', error)
+      return { success: false, message: '네트워크 오류가 발생했습니다.' }
     }
-  };
+  }
 
-  const register = async (email, username, password) => {
+  const register = async (username, email, password, fullName = '') => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, username, password }),
-      });
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          full_name: fullName
+        })
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
-      if (response.ok) {
-        // 회원가입 성공 시 자동 로그인
-        const loginResult = await login(email, password);
-        return loginResult;
+      if (data.success) {
+        const { access_token, refresh_token, user } = data.data
+        localStorage.setItem('access_token', access_token)
+        localStorage.setItem('refresh_token', refresh_token)
+        setToken(access_token)
+        setUser(user)
+        return { success: true, user, message: data.message }
       } else {
-        return { success: false, message: data.detail || '회원가입 실패' };
+        return { success: false, message: data.detail || '회원가입에 실패했습니다.' }
       }
     } catch (error) {
-      console.error('회원가입 오류:', error);
-      return { success: false, message: '네트워크 오류가 발생했습니다.' };
+      console.error('Register error:', error)
+      return { success: false, message: '네트워크 오류가 발생했습니다.' }
     }
-  };
+  }
 
   const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    setIsAuthenticated(false);
-    navigate('/');
-  };
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    setToken(null)
+    setUser(null)
+  }
 
-  const sendVerificationEmail = async (email) => {
+  const refreshToken = async () => {
     try {
-      const response = await fetch('/api/auth/send-verification', {
+      const refreshToken = localStorage.getItem('refresh_token')
+      if (!refreshToken) {
+        logout()
+        return false
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email }),
-      });
+        body: JSON.stringify({ refresh_token: refreshToken })
+      })
 
-      const data = await response.json();
-      return data;
+      if (response.ok) {
+        const data = await response.json()
+        const { access_token, refresh_token: newRefreshToken } = data.data
+        localStorage.setItem('access_token', access_token)
+        localStorage.setItem('refresh_token', newRefreshToken)
+        setToken(access_token)
+        return true
+      } else {
+        logout()
+        return false
+      }
     } catch (error) {
-      console.error('이메일 인증 발송 오류:', error);
-      return { success: false, message: '이메일 발송 실패' };
+      console.error('Token refresh error:', error)
+      logout()
+      return false
     }
-  };
-
-  const verifyEmail = async (email, code) => {
-    try {
-      const response = await fetch('/api/auth/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, verification_code: code }),
-      });
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('이메일 인증 확인 오류:', error);
-      return { success: false, message: '인증 확인 실패' };
-    }
-  };
-
-  const resetPassword = async (email) => {
-    try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('비밀번호 재설정 오류:', error);
-      return { success: false, message: '비밀번호 재설정 실패' };
-    }
-  };
+  }
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(profileData),
-      });
+        body: JSON.stringify(profileData)
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
-      if (response.ok) {
-        setUser(data.user);
-        return { success: true, message: '프로필 업데이트 성공' };
+      if (data.success) {
+        setUser(data.data.user)
+        return { success: true, message: data.message }
       } else {
-        return { success: false, message: data.detail || '프로필 업데이트 실패' };
+        return { success: false, message: data.detail || '프로필 업데이트에 실패했습니다.' }
       }
     } catch (error) {
-      console.error('프로필 업데이트 오류:', error);
-      return { success: false, message: '네트워크 오류가 발생했습니다.' };
+      console.error('Profile update error:', error)
+      return { success: false, message: '네트워크 오류가 발생했습니다.' }
     }
-  };
+  }
+
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        return { success: true, message: data.message }
+      } else {
+        return { success: false, message: data.detail || '비밀번호 변경에 실패했습니다.' }
+      }
+    } catch (error) {
+      console.error('Password change error:', error)
+      return { success: false, message: '네트워크 오류가 발생했습니다.' }
+    }
+  }
+
+  const apiCall = async (url, options = {}) => {
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}${url}`, {
+        ...options,
+        headers
+      })
+
+      if (response.status === 401) {
+        const refreshed = await refreshToken()
+        if (refreshed) {
+          // Retry with new token
+          const newToken = localStorage.getItem('access_token')
+          return fetch(`${API_BASE_URL}${url}`, {
+            ...options,
+            headers: {
+              ...headers,
+              'Authorization': `Bearer ${newToken}`
+            }
+          })
+        } else {
+          logout()
+          throw new Error('Authentication failed')
+        }
+      }
+
+      return response
+    } catch (error) {
+      console.error('API call error:', error)
+      throw error
+    }
+  }
 
   const value = {
     user,
-    isAuthenticated,
     loading,
+    token,
     login,
     register,
     logout,
-    sendVerificationEmail,
-    verifyEmail,
-    resetPassword,
     updateProfile,
-    checkAuthStatus
-  };
+    changePassword,
+    apiCall,
+    API_BASE_URL
+  }
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 

@@ -1,98 +1,99 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Login from './components/Login';
-import ContentGenerator from './components/ContentGenerator';
-import KeywordAnalysis from './components/KeywordAnalysis';
-import SeoOptimizer from './components/SeoOptimizer';
-import PostHistory from './components/PostHistory';
-import SettingsModal from './components/SettingsModal';
-import './styles/improved.css';
+import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import Sidebar from './components/Sidebar'
+import Header from './components/Header'
+import Dashboard from './components/Dashboard'
+import ContentGenerator from './components/ContentGenerator'
+import KeywordAnalyzer from './components/KeywordAnalyzer'
+import SeoOptimizer from './components/SeoOptimizer'
+import Settings from './components/Settings'
+import Login from './components/Login'
+import './App.css'
 
 // 보호된 라우트 컴포넌트
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth()
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
-    );
+    )
   }
   
-  return isAuthenticated ? children : <Navigate to="/" replace />;
-};
+  return isAuthenticated ? children : <Navigate to="/login" />
+}
 
 // 메인 레이아웃 컴포넌트
-const MainLayout = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
-  const openSettings = () => {
-    setSettingsOpen(true);
-  };
-
-  const closeSettings = () => {
-    setSettingsOpen(false);
-  };
+function MainLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // 모바일에서는 기본적으로 사이드바 닫기
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarOpen(false)
+      } else {
+        setSidebarOpen(true)
+      }
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Sidebar 
-        isCollapsed={sidebarCollapsed}
-        onToggle={toggleSidebar}
-        onSettingsClick={openSettings}
+        isOpen={sidebarOpen} 
+        onToggle={() => setSidebarOpen(!sidebarOpen)} 
       />
       
-      <main className="flex-1 overflow-hidden">
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/content-generator" element={<ContentGenerator />} />
-          <Route path="/keyword-analysis" element={<KeywordAnalysis />} />
-          <Route path="/seo-optimizer" element={<SeoOptimizer />} />
-          <Route path="/post-history" element={<PostHistory />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </main>
-
-      <SettingsModal 
-        isOpen={settingsOpen}
-        onClose={closeSettings}
-      />
+      <div className={`transition-all duration-300 ${
+        sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'
+      }`}>
+        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        
+        <main className="p-6">
+          <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/content" element={<ContentGenerator />} />
+            <Route path="/keywords" element={<KeywordAnalyzer />} />
+            <Route path="/seo" element={<SeoOptimizer />} />
+            <Route path="/history" element={<div className="text-center py-20"><h2 className="text-2xl font-bold">포스트 기록</h2><p className="text-muted-foreground mt-2">곧 출시될 예정입니다</p></div>} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </main>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-// 메인 앱 컴포넌트
-const App = () => {
+function App() {
   return (
-    <Router>
+    <ThemeProvider>
       <AuthProvider>
-        <Routes>
-          {/* 로그인 페이지 */}
-          <Route path="/" element={<Login />} />
-          
-          {/* 보호된 라우트들 */}
-          <Route path="/*" element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          } />
-        </Routes>
+        <Router>
+          <div className="App">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </div>
+        </Router>
       </AuthProvider>
-    </Router>
-  );
-};
+    </ThemeProvider>
+  )
+}
 
-export default App;
+export default App
 

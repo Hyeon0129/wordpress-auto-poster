@@ -1,63 +1,42 @@
-from fastapi import FastAPI, HTTPException
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import os
 
-# 라우터 임포트
-from .routes import auth, llm, wordpress, seo, posts, settings
+from src.db import Base, engine
 
-app = FastAPI(
-    title="WordPress Auto Poster API",
-    description="AI 기반 WordPress 자동 포스팅 플랫폼",
-    version="2.1.0"
-)
+from src.routes.auth import router as auth_router
+from src.routes.user import router as user_router
+from src.routes.wordpress import router as wordpress_router
+from src.routes.content import router as content_router
+from src.routes.llm import router as llm_router
+from src.routes.seo import router as seo_router
+from src.routes.keyword_analysis import router as keyword_analysis_router
 
-# CORS 설정
+
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 프로덕션에서는 특정 도메인으로 제한
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 라우터 등록
-app.include_router(auth.router)
-app.include_router(llm.router)
-app.include_router(wordpress.router)
-app.include_router(seo.router)
-app.include_router(posts.router)
-app.include_router(settings.router)
+Base.metadata.create_all(bind=engine)
 
-# 정적 파일 서빙 (프론트엔드)
-if os.path.exists("../client/dist"):
-    app.mount("/static", StaticFiles(directory="../client/dist/assets"), name="static")
-    app.mount("/", StaticFiles(directory="../client/dist", html=True), name="frontend")
+app.include_router(auth_router, prefix="/api/auth")
+app.include_router(user_router, prefix="/api/user")
+app.include_router(wordpress_router, prefix="/api/wordpress")
+app.include_router(content_router, prefix="/api/content")
+app.include_router(llm_router, prefix="/api/llm")
+app.include_router(seo_router, prefix="/api/seo")
+app.include_router(keyword_analysis_router, prefix="/api/keyword-analysis")
 
-@app.get("/api/health")
-async def health_check():
-    """헬스 체크 엔드포인트"""
-    return {
-        "status": "healthy",
-        "version": "2.1.0",
-        "message": "WordPress Auto Poster API is running"
-    }
-
-@app.get("/api/")
-async def root():
-    """API 루트 엔드포인트"""
-    return {
-        "message": "WordPress Auto Poster API v2.1.0",
-        "docs": "/docs",
-        "health": "/api/health"
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 

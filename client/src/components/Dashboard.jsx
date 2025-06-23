@@ -1,328 +1,329 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Progress } from './ui/progress'
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
-} from 'recharts';
-import { 
-  FileText, Eye, Globe, TrendingUp, Calendar, Clock, 
-  Target, Award, ArrowUp, ArrowDown, Activity
-} from 'lucide-react';
+  TrendingUp, 
+  FileText, 
+  Users, 
+  BarChart3,
+  PenTool,
+  Target,
+  Globe,
+  Zap,
+  ArrowRight,
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  Rocket
+} from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
-const Dashboard = () => {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+export default function Dashboard() {
+  const { user } = useAuth()
   const [stats, setStats] = useState({
-    total_posts: 0,
-    total_views: 0,
-    connected_sites: 0,
-    avg_seo_score: 0
-  });
-  
-  const [chartData, setChartData] = useState([]);
-  const [recentPosts, setRecentPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+    totalPosts: 0,
+    totalViews: 0,
+    totalSites: 0,
+    seoScore: 0
+  })
+  const [recentPosts, setRecentPosts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    loadDashboardData()
+  }, [])
 
-  const fetchDashboardData = async () => {
+  const loadDashboardData = async () => {
     try {
-      setLoading(true);
-      
-      // 통계 데이터 가져오기
-      const statsResponse = await fetch('/api/posts/statistics/overview', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        setStats(statsData.statistics);
-      }
-      
-      // 최근 포스트 가져오기
-      const postsResponse = await fetch('/api/posts?limit=5', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (postsResponse.ok) {
-        const postsData = await postsResponse.json();
-        setRecentPosts(postsData.posts);
-      }
-      
-      // 차트 데이터 생성 (모의 데이터)
-      const monthlyData = generateMonthlyData();
-      setChartData(monthlyData);
-      
+      // 시뮬레이션 데이터 (실제 환경에서는 API 호출)
+      setTimeout(() => {
+        setStats({
+          totalPosts: 24,
+          totalViews: 12500,
+          totalSites: 3,
+          seoScore: 85
+        })
+        
+        setRecentPosts([
+          {
+            id: 1,
+            title: "디지털 마케팅 트렌드 2024",
+            status: "published",
+            views: 1250,
+            date: "2024-01-15",
+            seoScore: 92
+          },
+          {
+            id: 2,
+            title: "AI 기반 콘텐츠 마케팅 전략",
+            status: "draft",
+            views: 0,
+            date: "2024-01-14",
+            seoScore: 88
+          },
+          {
+            id: 3,
+            title: "SEO 최적화 완벽 가이드",
+            status: "published",
+            views: 2100,
+            date: "2024-01-13",
+            seoScore: 95
+          }
+        ])
+        
+        setLoading(false)
+      }, 1000)
     } catch (error) {
-      console.error('대시보드 데이터 로드 실패:', error);
-    } finally {
-      setLoading(false);
+      console.error('대시보드 데이터 로드 실패:', error)
+      setLoading(false)
     }
-  };
+  }
 
-  const generateMonthlyData = () => {
-    const months = ['1월', '2월', '3월', '4월', '5월', '6월'];
-    return months.map(month => ({
-      month,
-      posts: Math.floor(Math.random() * 20) + 5,
-      views: Math.floor(Math.random() * 1000) + 200,
-      seo_score: Math.floor(Math.random() * 30) + 70
-    }));
-  };
-
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "blue" }) => {
-    const colorClasses = {
-      blue: "from-blue-500 to-blue-600",
-      green: "from-green-500 to-green-600", 
-      purple: "from-purple-500 to-purple-600",
-      orange: "from-orange-500 to-orange-600"
-    };
-
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+  const StatCard = ({ title, value, icon: Icon, trend, color = "blue" }) => (
+    <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
             {trend && (
-              <div className={`flex items-center mt-2 text-sm ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                {trend === 'up' ? <ArrowUp className="w-4 h-4 mr-1" /> : <ArrowDown className="w-4 h-4 mr-1" />}
-                <span>{trendValue}</span>
+              <div className="flex items-center mt-2">
+                <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                <span className="text-sm text-green-600 font-medium">{trend}</span>
               </div>
             )}
           </div>
-          <div className={`p-3 rounded-lg bg-gradient-to-r ${colorClasses[color]}`}>
-            <Icon className="w-6 h-6 text-white" />
+          <div className={`p-3 rounded-full bg-gradient-to-br from-${color}-400 to-${color}-600 text-white group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className="h-6 w-6" />
           </div>
         </div>
-      </div>
-    );
-  };
+      </CardContent>
+      <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-${color}-400 to-${color}-600`} />
+    </Card>
+  )
 
-  const ChartCard = ({ title, children, className = "" }) => (
-    <div className={`bg-white rounded-xl shadow-lg p-6 border border-gray-100 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      {children}
-    </div>
-  );
+  const QuickActionCard = ({ title, description, icon: Icon, action, color = "blue" }) => (
+    <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={action}>
+      <CardContent className="p-6">
+        <div className="flex items-start space-x-4">
+          <div className={`p-3 rounded-lg bg-gradient-to-br from-${color}-100 to-${color}-200 group-hover:from-${color}-200 group-hover:to-${color}-300 transition-all duration-300`}>
+            <Icon className={`h-6 w-6 text-${color}-600`} />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
+            <p className="text-sm text-gray-600 mb-3">{description}</p>
+            <div className="flex items-center text-blue-600 text-sm font-medium group-hover:text-blue-700">
+              시작하기 <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white rounded-xl h-32"></div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 bg-white rounded-xl h-96"></div>
-              <div className="bg-white rounded-xl h-96"></div>
-            </div>
-          </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <p className="text-gray-600">대시보드를 로드하는 중...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">대시보드</h1>
-          <p className="text-gray-600">콘텐츠 성과와 주요 지표를 한눈에 확인하세요</p>
-        </div>
-
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="총 포스트"
-            value={stats.total_posts}
-            icon={FileText}
-            trend="up"
-            trendValue="+12%"
-            color="blue"
-          />
-          <StatCard
-            title="총 조회수"
-            value={stats.total_views.toLocaleString()}
-            icon={Eye}
-            trend="up"
-            trendValue="+8%"
-            color="green"
-          />
-          <StatCard
-            title="연결된 사이트"
-            value={stats.connected_sites || 1}
-            icon={Globe}
-            trend="up"
-            trendValue="+1"
-            color="purple"
-          />
-          <StatCard
-            title="평균 SEO 점수"
-            value={`${stats.avg_seo_score}점`}
-            icon={TrendingUp}
-            trend="up"
-            trendValue="+5점"
-            color="orange"
-          />
-        </div>
-
-        {/* 차트 및 정보 섹션 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* 월별 성과 차트 (col-8) */}
-          <div className="lg:col-span-2">
-            <ChartCard title="월별 성과 분석">
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="posts" 
-                    stackId="1"
-                    stroke="#3b82f6" 
-                    fill="#3b82f6"
-                    fillOpacity={0.6}
-                    name="포스트 수"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="views" 
-                    stackId="2"
-                    stroke="#10b981" 
-                    fill="#10b981"
-                    fillOpacity={0.6}
-                    name="조회수"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartCard>
-          </div>
-
-          {/* 중요 정보 (col-4) */}
-          <div className="space-y-6">
-            {/* 이번 달 목표 */}
-            <ChartCard title="이번 달 목표">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">포스트 작성</span>
-                  <span className="text-sm font-medium">15/20</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{width: '75%'}}></div>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">SEO 점수</span>
-                  <span className="text-sm font-medium">85/100</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-600 h-2 rounded-full" style={{width: '85%'}}></div>
-                </div>
-              </div>
-            </ChartCard>
-
-            {/* 빠른 통계 */}
-            <ChartCard title="빠른 통계">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 text-blue-600 mr-2" />
-                    <span className="text-sm text-gray-600">이번 주</span>
-                  </div>
-                  <span className="text-sm font-medium">3 포스트</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Clock className="w-4 h-4 text-green-600 mr-2" />
-                    <span className="text-sm text-gray-600">평균 작성 시간</span>
-                  </div>
-                  <span className="text-sm font-medium">25분</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Target className="w-4 h-4 text-purple-600 mr-2" />
-                    <span className="text-sm text-gray-600">키워드 적중률</span>
-                  </div>
-                  <span className="text-sm font-medium">92%</span>
-                </div>
-              </div>
-            </ChartCard>
+    <div className="space-y-8">
+      {/* 헤더 섹션 */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white relative overflow-hidden">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold mb-2">
+            안녕하세요, {user?.name || '사용자'}님! 👋
+          </h1>
+          <p className="text-blue-100 text-lg mb-6">
+            오늘도 멋진 콘텐츠를 만들어보세요. AI가 도와드릴게요!
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button className="bg-white text-blue-600 hover:bg-blue-50 font-semibold">
+              <Sparkles className="mr-2 h-4 w-4" />
+              새 콘텐츠 생성
+            </Button>
+            <Button variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+              <Rocket className="mr-2 h-4 w-4" />
+              튜토리얼 보기
+            </Button>
           </div>
         </div>
+        
+        {/* 배경 장식 */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full translate-y-24 -translate-x-24"></div>
+      </div>
 
-        {/* SEO 성과 차트 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="SEO 점수 추이">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis domain={[60, 100]} />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="seo_score" 
-                  stroke="#8b5cf6" 
-                  strokeWidth={3}
-                  dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                  name="SEO 점수"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
+      {/* 통계 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="총 포스트"
+          value={stats.totalPosts}
+          icon={FileText}
+          trend="+12% 이번 달"
+          color="blue"
+        />
+        <StatCard
+          title="총 조회수"
+          value={stats.totalViews.toLocaleString()}
+          icon={BarChart3}
+          trend="+23% 이번 달"
+          color="green"
+        />
+        <StatCard
+          title="연결된 사이트"
+          value={stats.totalSites}
+          icon={Globe}
+          color="purple"
+        />
+        <StatCard
+          title="평균 SEO 점수"
+          value={`${stats.seoScore}점`}
+          icon={Target}
+          trend="+5점 향상"
+          color="orange"
+        />
+      </div>
 
-          <ChartCard title="콘텐츠 유형별 분포">
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: '블로그', value: 45, color: '#3b82f6' },
-                    { name: '기사', value: 30, color: '#10b981' },
-                    { name: '튜토리얼', value: 15, color: '#f59e0b' },
-                    { name: '리뷰', value: 10, color: '#ef4444' }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {[
-                    { name: '블로그', value: 45, color: '#3b82f6' },
-                    { name: '기사', value: 30, color: '#10b981' },
-                    { name: '튜토리얼', value: 15, color: '#f59e0b' },
-                    { name: '리뷰', value: 10, color: '#ef4444' }
-                  ].map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* 빠른 작업 */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Zap className="h-5 w-5 text-yellow-500" />
+                <span>빠른 작업</span>
+              </CardTitle>
+              <CardDescription>
+                자주 사용하는 기능들을 빠르게 시작해보세요
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <QuickActionCard
+                title="AI 콘텐츠 생성"
+                description="키워드를 입력하고 SEO 최적화된 콘텐츠를 자동 생성하세요"
+                icon={PenTool}
+                color="blue"
+                action={() => window.location.href = '/content'}
+              />
+              <QuickActionCard
+                title="SEO 분석"
+                description="기존 콘텐츠의 SEO 성능을 분석하고 개선점을 찾아보세요"
+                icon={Target}
+                color="green"
+                action={() => window.location.href = '/seo'}
+              />
+              <QuickActionCard
+                title="WordPress 연결"
+                description="새로운 WordPress 사이트를 연결하고 자동 포스팅을 설정하세요"
+                icon={Globe}
+                color="purple"
+                action={() => window.location.href = '/settings'}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 최근 포스트 */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Clock className="h-5 w-5 text-blue-500" />
+                <span>최근 포스트</span>
+              </CardTitle>
+              <CardDescription>
+                최근에 생성된 콘텐츠들을 확인해보세요
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {recentPosts.map((post) => (
+                <div key={post.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-gray-900 text-sm leading-tight">{post.title}</h4>
+                    <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
+                      {post.status === 'published' ? '발행됨' : '초안'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                    <span className="flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {new Date(post.date).toLocaleDateString('ko-KR')}
+                    </span>
+                    <span>{post.views.toLocaleString()} 조회</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-600">SEO 점수</span>
+                      <div className="flex items-center space-x-1">
+                        <Progress value={post.seoScore} className="w-16 h-2" />
+                        <span className="text-xs font-medium text-gray-700">{post.seoScore}</span>
+                      </div>
+                    </div>
+                    {post.seoScore >= 90 && (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
+                    {post.seoScore < 70 && (
+                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              <Button variant="outline" className="w-full mt-4">
+                모든 포스트 보기
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Dashboard;
+      {/* 성능 개요 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5 text-green-500" />
+            <span>이번 달 성과</span>
+          </CardTitle>
+          <CardDescription>
+            콘텐츠 성과와 SEO 개선 현황을 확인해보세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600 mb-1">24</div>
+              <div className="text-sm text-blue-700">생성된 포스트</div>
+              <div className="text-xs text-blue-600 mt-1">+20% 증가</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600 mb-1">85%</div>
+              <div className="text-sm text-green-700">평균 SEO 점수</div>
+              <div className="text-xs text-green-600 mt-1">+5점 향상</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600 mb-1">12.5K</div>
+              <div className="text-sm text-purple-700">총 조회수</div>
+              <div className="text-xs text-purple-600 mt-1">+23% 증가</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 
