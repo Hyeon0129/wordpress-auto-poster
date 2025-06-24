@@ -118,3 +118,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* API 연결 상태 점 */
+.api-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #14532d; /* 어두운 녹색 (연결 안됨) */
+  margin-right: 6px;
+  box-shadow: 0 0 0 1px rgba(20,83,45,0.10);
+  vertical-align: middle;
+  transition: background 0.3s;
+}
+.api-status-dot.on {
+  background: #16a34a; /* 중간 밝기 녹색 */
+  animation: api-dot-blink 1s infinite alternate;
+  box-shadow: 0 0 4px 1px #16a34a33;
+}
+@keyframes api-dot-blink {
+  0% { background: #16a34a; }
+  100% { background: #22c55e; }
+}

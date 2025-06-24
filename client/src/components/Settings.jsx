@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -23,9 +23,14 @@ import {
   Trash2,
   Edit,
   Eye,
-  EyeOff
+  EyeOff,
+  Loader2
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { Tooltip } from './ui/tooltip'
+import { useTheme } from '../contexts/ThemeContext'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetClose } from './ui/sheet'
+import { ApiStatusContext } from '../contexts/ApiStatusContext'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -62,6 +67,15 @@ export default function Settings() {
     notification_email: true,
     seo_analysis: true
   })
+
+  // API 연결 상태
+  const { apiConnected, setApiConnected } = useContext(ApiStatusContext)
+  const [apiTestLoading, setApiTestLoading] = useState(false)
+  // 수정 모달 상태
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editProvider, setEditProvider] = useState(null)
+
+  const { theme } = useTheme()
 
   useEffect(() => {
     loadSettings()
@@ -207,22 +221,33 @@ export default function Settings() {
   const handleTestLlmProvider = async (provider) => {
     setIsTesting(true)
     try {
-      // 데모용 테스트
-      setTimeout(() => {
-        setTestResults(prev => ({
-          ...prev,
-          [`llm_${provider.id}`]: { 
-            success: provider.api_key ? true : false, 
-            message: provider.api_key ? '연결 성공' : 'API 키가 필요합니다' 
-          }
-        }))
-        setIsTesting(false)
-      }, 2000)
+      const response = await fetch(`${API_BASE_URL}/api/llm/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: provider.name,
+          provider_type: provider.provider_type,
+          api_key: provider.api_key,
+          base_url: provider.base_url,
+          model_name: provider.model_name
+        })
+      })
+      const data = await response.json()
+      setTestResults(prev => ({
+        ...prev,
+        [`llm_${provider.id}`]: data
+      }))
+      setApiConnected(!!data.success)
     } catch (error) {
       setTestResults(prev => ({
         ...prev,
         [`llm_${provider.id}`]: { success: false, message: error.message }
       }))
+      setApiConnected(false)
+    } finally {
       setIsTesting(false)
     }
   }
@@ -250,30 +275,9 @@ export default function Settings() {
     }
   }
 
-  const handleEditLlmProvider = async (provider) => {
-    // 편집 모드로 전환
-    setNewProvider({
-      name: provider.name,
-      provider_type: provider.provider_type,
-      api_key: provider.api_key || '',
-      base_url: provider.base_url || '',
-      model_name: provider.model_name
-    })
-    
-    // 기존 제공자 삭제 후 새로 추가하는 방식
-    await handleDeleteLlmProvider(provider.id)
-  }
-
-  const handleActivateLlmProvider = async (providerId) => {
-    try {
-      setLlmProviders(prev => prev.map(p => ({
-        ...p,
-        is_active: p.id === providerId
-      })))
-      alert('LLM 제공자가 활성화되었습니다.')
-    } catch (error) {
-      alert(`제공자 활성화 중 오류: ${error.message}`)
-    }
+  const handleEditLlmProvider = (provider) => {
+    setEditProvider(provider)
+    setEditModalOpen(true)
   }
 
   const togglePasswordVisibility = (id) => {
@@ -281,6 +285,72 @@ export default function Settings() {
       ...prev,
       [id]: !prev[id]
     }))
+  }
+
+  // LLM 연결 상태 테스트 (가장 최근 활성화된 provider 기준)
+  const testApiConnection = async () => {
+    setApiTestLoading(true)
+    try {
+      // 활성화된 provider 찾기
+      const active = llmProviders.find(p => p.is_active)
+      if (!active) {
+        setApiConnected(false)
+        setApiTestLoading(false)
+        return
+      }
+      const response = await fetch(`${API_BASE_URL}/api/llm/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: active.name,
+          provider_type: active.provider_type,
+          api_key: active.api_key,
+          base_url: active.base_url,
+          model_name: active.model_name
+        })
+      })
+      const data = await response.json()
+      setApiConnected(!!data.success)
+    } catch (e) {
+      setApiConnected(false)
+    } finally {
+      setApiTestLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (llmProviders.length > 0) testApiConnection()
+  }, [llmProviders])
+
+  // 수정 모달 저장
+  const handleEditProviderSave = async (updated) => {
+    setIsSaving(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers/${updated.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updated)
+      })
+      if (response.ok) {
+        await loadLlmProviders()
+        setEditModalOpen(false)
+        setEditProvider(null)
+        alert('LLM 제공자 정보가 수정되었습니다.')
+      } else {
+        const data = await response.json()
+        alert(`수정 실패: ${data.detail || data.message}`)
+      }
+    } catch (e) {
+      alert('수정 중 오류: ' + e.message)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -455,14 +525,23 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="provider-name">제공자 이름 *</Label>
+                  <Input
+                    id="provider-name"
+                    placeholder="예: 내 OpenAI 계정"
+                    value={newProvider.name}
+                    onChange={(e) => setNewProvider(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="provider-name">제공자 *</Label>
+                  <Label htmlFor="provider-type">제공자 *</Label>
                   <Select 
                     value={newProvider.provider_type} 
                     onValueChange={(value) => setNewProvider(prev => ({ 
                       ...prev, 
                       provider_type: value,
-                      model_name: value === 'openai' ? 'gpt-3.5-turbo' : 'qwen2.5:32b',
+                      model_name: value === 'openai' ? 'gpt-3.5-turbo' : 'qwen3:30b',
                       base_url: value === 'openai' ? '' : 'http://localhost:11434/v1'
                     }))}
                   >
@@ -476,7 +555,7 @@ export default function Settings() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="provider-name">모델명 *</Label>
+                  <Label htmlFor="provider-model">모델명 *</Label>
                   <Select 
                     value={newProvider.model_name} 
                     onValueChange={(value) => setNewProvider(prev => ({ ...prev, model_name: value }))}
@@ -493,7 +572,7 @@ export default function Settings() {
                         </>
                       ) : (
                         <>
-                          <SelectItem value="qwen2.5:32b">qwen2.5:32b</SelectItem>
+                          <SelectItem value="qwen3:30b">qwen3:30b</SelectItem>
                           <SelectItem value="llama3.1:8b">llama3.1:8b</SelectItem>
                           <SelectItem value="mistral:7b">mistral:7b</SelectItem>
                         </>
@@ -541,14 +620,6 @@ export default function Settings() {
                 )}
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="llm-activate"
-                  checked={true}
-                />
-                <Label htmlFor="llm-activate">활성화</Label>
-              </div>
-
               <Button onClick={handleAddLlmProvider} disabled={isSaving} className="w-full">
                 {isSaving ? (
                   <>저장 중...</>
@@ -573,62 +644,52 @@ export default function Settings() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {llmProviders.map((provider) => (
-                    <div key={provider.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{provider.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {provider.provider_type === 'openai' ? 'OpenAI' : 'Ollama'} - {provider.model_name}
-                        </p>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <Badge variant={provider.is_active ? "default" : "secondary"}>
-                            {provider.is_active ? '활성' : '비활성'}
-                          </Badge>
-                          <Badge variant={provider.status === 'connected' ? "default" : "destructive"}>
-                            {provider.status === 'connected' ? '연결됨' : '연결 안됨'}
-                          </Badge>
-                          {testResults[`llm_${provider.id}`] && (
-                            <Badge variant={testResults[`llm_${provider.id}`].success ? "default" : "destructive"}>
-                              {testResults[`llm_${provider.id}`].success ? '테스트 성공' : '테스트 실패'}
-                            </Badge>
-                          )}
+                  {llmProviders.map((provider) => {
+                    const testResult = testResults[`llm_${provider.id}`]
+                    return (
+                      <div key={provider.id} className="flex flex-col gap-2 p-4 border border-border rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{provider.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {provider.provider_type === 'openai' ? 'OpenAI' : 'Ollama'} - {provider.model_name}
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Tooltip content="API 연결 테스트">
+                              <Button
+                                variant={testResult ? (testResult.success ? 'default' : 'destructive') : 'outline'}
+                                size="sm"
+                                onClick={() => handleTestLlmProvider(provider)}
+                                disabled={isTesting}
+                              >
+                                {isTesting ? <Loader2 className="animate-spin h-4 w-4" /> : <TestTube className="h-4 w-4" />}
+                              </Button>
+                            </Tooltip>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditLlmProvider(provider)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteLlmProvider(provider.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleTestLlmProvider(provider)}
-                          disabled={isTesting}
-                        >
-                          <TestTube className="h-4 w-4" />
-                        </Button>
-                        {!provider.is_active && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleActivateLlmProvider(provider.id)}
-                          >
-                            활성화
-                          </Button>
+                        {testResult && (
+                          <div className={`text-sm mt-1 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}>
+                            {testResult.success ? 'API 연결 성공!' : `API 연결 실패: ${testResult.message || ''}`}
+                          </div>
                         )}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditLlmProvider(provider)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDeleteLlmProvider(provider.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -769,6 +830,73 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* LLM 정보 수정 모달 (중앙, 심플&고급스럽게) */}
+      {editModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div
+            className={`bg-background rounded-2xl shadow-2xl w-full max-w-lg p-8 border border-border relative animate-fadeIn ${theme === 'dark' ? 'dark' : 'light'}`}
+            onClick={e => e.stopPropagation()}
+            style={{ minWidth: 360 }}
+          >
+            <button
+              onClick={() => setEditModalOpen(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors text-2xl font-bold focus:outline-none"
+              aria-label="닫기"
+            >
+              &times;
+            </button>
+            <h2 className="text-2xl font-bold mb-6 text-center">LLM 제공자 정보 수정</h2>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="edit-provider-name">제공자 이름</label>
+                <Input
+                  id="edit-provider-name"
+                  value={editProvider?.name || ''}
+                  onChange={e => setEditProvider(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="edit-provider-api-key">API Key</label>
+                <Input
+                  id="edit-provider-api-key"
+                  type="password"
+                  value={editProvider?.api_key || ''}
+                  onChange={e => setEditProvider(prev => ({ ...prev, api_key: e.target.value }))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="edit-provider-model">모델명</label>
+                <Input
+                  id="edit-provider-model"
+                  value={editProvider?.model_name || ''}
+                  onChange={e => setEditProvider(prev => ({ ...prev, model_name: e.target.value }))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-8">
+              <Button
+                onClick={() => handleEditProviderSave(editProvider)}
+                disabled={isSaving}
+                className="px-6 py-2 rounded-lg text-base font-semibold shadow-sm"
+              >
+                {isSaving ? '저장 중...' : '저장'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditModalOpen(false)}
+                className="px-6 py-2 rounded-lg text-base font-semibold"
+              >
+                취소
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

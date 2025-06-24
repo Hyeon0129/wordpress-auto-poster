@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { 
@@ -9,6 +9,7 @@ import {
   Zap
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
+import { ApiStatusContext } from '../contexts/ApiStatusContext'
 
 export default function Header({ onMenuClick }) {
   const { theme, toggleTheme } = useTheme()
@@ -18,15 +19,10 @@ export default function Header({ onMenuClick }) {
   ])
   const [showNotifications, setShowNotifications] = useState(false)
 
-  // API 연결 상태 (데모용)
-  const [apiStatus] = useState({
-    wordpress: true,
-    openai: true,
-    connected: true
-  })
+  const { apiConnected } = useContext(ApiStatusContext)
 
   return (
-    <header className="h-16 bg-background border-b border-border px-6 flex items-center justify-between">
+    <header className="h-16 bg-background border-b border-border px-6 flex items-center justify-between relative">
       {/* 왼쪽: 메뉴 버튼 (모바일) */}
       <div className="flex items-center">
         <Button
@@ -41,16 +37,18 @@ export default function Header({ onMenuClick }) {
 
       {/* 오른쪽: 액션 버튼들 */}
       <div className="flex items-center space-x-3">
-        {/* API 상태 표시 */}
-        {apiStatus.connected && (
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-green-600 font-medium hidden sm:inline">API 연결됨</span>
-            </div>
-          </div>
-        )}
-
+        {/* 알림 왼쪽에 작은 API 연결 점 하나만! */}
+        <span
+          className={`api-status-dot${apiConnected ? ' on' : ''}`}
+          style={{
+            width: 8,
+            height: 8,
+            marginRight: 6,
+            position: 'static',
+            display: 'inline-block',
+            verticalAlign: 'middle'
+          }}
+        ></span>
         {/* 알림 */}
         <div className="relative">
           <Button

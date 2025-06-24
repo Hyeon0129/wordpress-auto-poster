@@ -10,6 +10,7 @@ import KeywordAnalyzer from './components/KeywordAnalyzer'
 import SeoOptimizer from './components/SeoOptimizer'
 import Settings from './components/Settings'
 import Login from './components/Login'
+import { ApiStatusProvider } from './contexts/ApiStatusContext'
 import './App.css'
 
 // 보호된 라우트 컴포넌트
@@ -76,22 +77,24 @@ function MainLayout() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <div className="App">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/*" element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </div>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <ApiStatusProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <div className="App">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/*" element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </div>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
+    </ApiStatusProvider>
   )
 }
 

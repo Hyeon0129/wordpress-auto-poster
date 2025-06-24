@@ -36,14 +36,18 @@ async def get_llm_providers(
         LLMProvider.user_id == current_user.id
     ).all()
     
+    def mask_key(key):
+        if not key:
+            return ''
+        if len(key) <= 8:
+            return '*' * len(key)
+        return key[:4] + '*' * (len(key)-8) + key[-4:]
+
     return {
         "providers": [
             {
-                "id": p.id,
-                "name": p.name,
-                "provider_type": p.provider_type,
-                "model_name": p.model_name,
-                "is_active": p.is_active,
+                **p.to_dict(),
+                "api_key": mask_key(p.api_key),
                 "status": "connected" if p.api_key else "disconnected"
             }
             for p in providers
@@ -103,6 +107,29 @@ async def delete_llm_provider(
     
     return {"message": "LLM 제공자가 성공적으로 삭제되었습니다."}
 
+@router.put("/providers/{provider_id}")
+async def update_llm_provider(
+    provider_id: int,
+    provider_data: LLMProviderCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """LLM 제공자 정보 수정"""
+    provider = db.query(LLMProvider).filter(
+        LLMProvider.id == provider_id,
+        LLMProvider.user_id == current_user.id
+    ).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="LLM 제공자를 찾을 수 없습니다.")
+    provider.name = provider_data.name
+    provider.provider_type = provider_data.provider_type
+    provider.api_key = provider_data.api_key
+    provider.base_url = provider_data.base_url
+    provider.model_name = provider_data.model_name
+    db.commit()
+    db.refresh(provider)
+    return {"message": "LLM 제공자 정보가 수정되었습니다."}
+
 @router.get("/models")
 async def get_available_models(
     current_user: User = Depends(get_current_user)
@@ -116,14 +143,25 @@ async def get_available_models(
 @router.post("/test")
 async def test_llm_connection(
     provider_data: LLMProviderCreate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """LLM 연결 테스트"""
     try:
+        # DB에서 해당 provider의 원본 API 키 조회
+        provider = db.query(LLMProvider).filter(
+            LLMProvider.user_id == current_user.id,
+            LLMProvider.name == provider_data.name,
+            LLMProvider.provider_type == provider_data.provider_type
+        ).first()
+        
+        # DB에 저장된 원본 API 키 사용 (프론트에서 마스킹된 키가 전달될 수 있음)
+        api_key = str(provider.api_key) if provider and provider.api_key else provider_data.api_key
+        
         llm_service = LLMService()
-        result = await llm_service.test_connection(
+        result = llm_service.test_connection(
             provider_type=provider_data.provider_type,
-            api_key=provider_data.api_key,
+            api_key=api_key,
             base_url=provider_data.base_url,
             model_name=provider_data.model_name
         )

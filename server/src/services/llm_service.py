@@ -153,12 +153,11 @@ class LLMService:
         try:
             if provider_type == 'openai':
                 if not api_key:
-                    # 환경변수에서 API 키 확인
                     api_key = os.getenv('OPENAI_API_KEY')
                     if not api_key:
                         return {
                             'success': False,
-                            'message': 'OpenAI API 키가 필요합니다.'
+                            'message': 'OpenAI API 키가 입력되지 않았습니다. LLM 설정에서 API 키를 입력하거나, 서버 환경변수(OPENAI_API_KEY)를 설정하세요.'
                         }
                 
                 # OpenAI API 테스트
@@ -292,4 +291,12 @@ class LLMService:
         
         else:
             raise ValueError(f"지원하지 않는 제공자 타입: {provider['provider_type']}")
+
+    async def analyze_content(self, content, analysis_type):
+        # 실제 분석 로직 또는 더미 반환
+        return {"result": f"{analysis_type} 분석 결과", "content": content}
+
+    async def generate_content(self, prompt, model):
+        # 실제 생성 로직 또는 더미 반환
+        return f"{model}로 생성된 콘텐츠: {prompt}"
 

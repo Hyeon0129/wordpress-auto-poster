@@ -30,6 +30,8 @@ class LLMProvider(Base):
             'provider_type': self.provider_type,
             'model_name': self.model_name,
             'is_active': self.is_active,
+            'api_key': self.api_key,
+            'base_url': self.base_url,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

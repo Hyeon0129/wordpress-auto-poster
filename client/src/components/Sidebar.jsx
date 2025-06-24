@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import ProfileModal from './ProfileModal'
+import { ApiStatusContext } from '../contexts/ApiStatusContext'
 
 const menuItems = [
   {
@@ -61,13 +62,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { theme, toggleTheme } = useTheme()
   const [showProfile, setShowProfile] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
-
-  // API 연결 상태 (데모용)
-  const [apiStatus, setApiStatus] = useState({
-    wordpress: true,
-    openai: true,
-    connected: true
-  })
+  const { apiConnected } = useContext(ApiStatusContext)
 
   // 이번 달 사용량 (데모용)
   const monthlyUsage = {
