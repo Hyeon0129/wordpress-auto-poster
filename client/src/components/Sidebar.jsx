@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import ProfileModal from './ProfileModal'
 
 const menuItems = [
   {
@@ -59,6 +60,7 @@ export default function Sidebar({ isOpen, onToggle }) {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const [showProfile, setShowProfile] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
 
   // API 연결 상태 (데모용)
   const [apiStatus, setApiStatus] = useState({
@@ -102,18 +104,6 @@ export default function Sidebar({ isOpen, onToggle }) {
               </Button>
             </div>
           </div>
-
-          {/* API 상태 표시 */}
-          {isOpen && apiStatus.connected && (
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center space-x-2 text-sm">
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-green-600 font-medium">API 연결됨</span>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* 메뉴 항목 */}
           <nav className="flex-1 p-4">
@@ -208,7 +198,7 @@ export default function Sidebar({ isOpen, onToggle }) {
                     className="w-full justify-start"
                     onClick={() => {
                       setShowProfile(false)
-                      // 프로필 페이지로 이동 또는 모달 열기
+                      setShowProfileModal(true)
                     }}
                   >
                     <User className="h-4 w-4 mr-2" />
@@ -240,6 +230,12 @@ export default function Sidebar({ isOpen, onToggle }) {
           onClick={onToggle}
         />
       )}
+
+      {/* 프로필 설정 모달 */}
+      <ProfileModal 
+        isOpen={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
+      />
     </>
   )
 }

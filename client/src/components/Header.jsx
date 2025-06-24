@@ -51,16 +51,6 @@ export default function Header({ onMenuClick }) {
           </div>
         )}
 
-        {/* 다크모드 토글 */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleTheme}
-          className="p-2"
-        >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
-
         {/* 알림 */}
         <div className="relative">
           <Button

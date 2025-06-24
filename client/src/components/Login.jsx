@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -23,6 +24,7 @@ import EmailVerification from './EmailVerification'
 
 const Login = () => {
   const { login, register } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('login')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -61,6 +63,10 @@ const Login = () => {
 
       if (result.success) {
         setAlert({ type: 'success', message: '로그인 성공!' })
+        // 로그인 성공 시 대시보드로 리다이렉트
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 1000)
       } else if (result.requires2FA) {
         setRequires2FA(true)
         setAlert({ type: 'info', message: result.message })
@@ -102,6 +108,10 @@ const Login = () => {
           setAlert({ type: 'success', message: '회원가입이 완료되었습니다. 이메일 인증을 진행해주세요.' })
         } else {
           setAlert({ type: 'success', message: result.message })
+          // 회원가입 성공 시 대시보드로 리다이렉트
+          setTimeout(() => {
+            navigate('/dashboard')
+          }, 1000)
         }
       } else {
         setAlert({ type: 'error', message: result.message })

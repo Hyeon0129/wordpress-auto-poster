@@ -21,6 +21,7 @@ import {
   Rocket
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -33,6 +34,7 @@ export default function Dashboard() {
     seoScore: 0
   })
   const [recentPosts, setRecentPosts] = useState([])
+  const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -75,6 +77,15 @@ export default function Dashboard() {
             date: "2024-01-13",
             seoScore: 95
           }
+        ])
+
+        setChartData([
+          { name: '1월', posts: 4, views: 2400 },
+          { name: '2월', posts: 6, views: 3200 },
+          { name: '3월', posts: 8, views: 4100 },
+          { name: '4월', posts: 12, views: 5800 },
+          { name: '5월', posts: 18, views: 7200 },
+          { name: '6월', posts: 24, views: 12500 }
         ])
         
         setLoading(false)
@@ -141,20 +152,20 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* 헤더 섹션 */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 rounded-2xl p-8 text-white relative overflow-hidden">
         <div className="relative z-10">
           <h1 className="text-3xl font-bold mb-2">
-            안녕하세요, {user?.name || '사용자'}님! 👋
+            환영합니다
           </h1>
-          <p className="text-blue-100 text-lg mb-6">
-            오늘도 멋진 콘텐츠를 만들어보세요. AI가 도와드릴게요!
+          <p className="text-slate-300 text-lg mb-6">
+            효율적인 콘텐츠 관리로 성공을 만들어가세요
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button className="bg-white text-blue-600 hover:bg-blue-50 font-semibold">
+            <Button className="bg-white text-slate-900 hover:bg-slate-100 font-semibold">
               <Sparkles className="mr-2 h-4 w-4" />
               새 콘텐츠 생성
             </Button>
-            <Button variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+            <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
               <Rocket className="mr-2 h-4 w-4" />
               튜토리얼 보기
             </Button>
@@ -162,8 +173,8 @@ export default function Dashboard() {
         </div>
         
         {/* 배경 장식 */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -translate-y-32 translate-x-32"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full translate-y-24 -translate-x-24"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-32 translate-x-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-3 rounded-full translate-y-24 -translate-x-24"></div>
       </div>
 
       {/* 통계 카드 */}
@@ -198,54 +209,46 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 빠른 작업 */}
+        {/* 성과 차트 */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Zap className="h-5 w-5 text-yellow-500" />
-                <span>빠른 작업</span>
+                <BarChart3 className="h-5 w-5 text-blue-500" />
+                <span>월별 성과</span>
               </CardTitle>
               <CardDescription>
-                자주 사용하는 기능들을 빠르게 시작해보세요
+                포스트 수와 조회수 추이를 확인해보세요
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <QuickActionCard
-                title="AI 콘텐츠 생성"
-                description="키워드를 입력하고 SEO 최적화된 콘텐츠를 자동 생성하세요"
-                icon={PenTool}
-                color="blue"
-                action={() => window.location.href = '/content'}
-              />
-              <QuickActionCard
-                title="SEO 분석"
-                description="기존 콘텐츠의 SEO 성능을 분석하고 개선점을 찾아보세요"
-                icon={Target}
-                color="green"
-                action={() => window.location.href = '/seo'}
-              />
-              <QuickActionCard
-                title="WordPress 연결"
-                description="새로운 WordPress 사이트를 연결하고 자동 포스팅을 설정하세요"
-                icon={Globe}
-                color="purple"
-                action={() => window.location.href = '/settings'}
-              />
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Bar yAxisId="left" dataKey="posts" fill="#3b82f6" name="포스트 수" />
+                    <Line yAxisId="right" type="monotone" dataKey="views" stroke="#10b981" strokeWidth={2} name="조회수" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 최근 포스트 */}
+        {/* 포스트 기록 */}
         <div>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <span>최근 포스트</span>
+                <FileText className="h-5 w-5 text-green-500" />
+                <span>포스트 기록</span>
               </CardTitle>
               <CardDescription>
-                최근에 생성된 콘텐츠들을 확인해보세요
+                실제로 포스팅한 항목들을 확인해보세요
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

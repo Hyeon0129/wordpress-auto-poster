@@ -67,6 +67,20 @@ export default function Settings() {
     loadSettings()
   }, [])
 
+  const loadLlmProviders = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setLlmProviders(data.providers || [])
+      }
+    } catch (error) {
+      console.error('LLM 제공자 로드 실패:', error)
+    }
+  }
+
   const loadSettings = async () => {
     try {
       // WordPress 사이트 목록 로드
@@ -78,17 +92,8 @@ export default function Settings() {
         setWpSites(wpData.sites || [])
       }
 
-      // LLM 제공자 목록 로드 (데모 데이터)
-      setLlmProviders([
-        {
-          id: 1,
-          name: 'OpenAI GPT-4',
-          provider_type: 'openai',
-          model_name: 'gpt-4',
-          is_active: true,
-          status: 'connected'
-        }
-      ])
+      // LLM 제공자 목록 로드
+      await loadLlmProviders()
 
     } catch (error) {
       console.error('설정 로드 실패:', error)
@@ -168,23 +173,30 @@ export default function Settings() {
 
     setIsSaving(true)
     try {
-      // 데모용 추가
-      const newId = Date.now()
-      setLlmProviders(prev => [...prev, {
-        ...newProvider,
-        id: newId,
-        is_active: false,
-        status: 'disconnected'
-      }])
-      
-      setNewProvider({
-        name: '',
-        provider_type: 'openai',
-        api_key: '',
-        base_url: '',
-        model_name: 'gpt-3.5-turbo'
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newProvider)
       })
-      alert('LLM 제공자가 성공적으로 추가되었습니다.')
+
+      const data = await response.json()
+
+      if (response.ok) {
+        await loadLlmProviders() // 목록 새로고침
+        setNewProvider({
+          name: '',
+          provider_type: 'openai',
+          api_key: '',
+          base_url: '',
+          model_name: 'gpt-3.5-turbo'
+        })
+        alert('LLM 제공자가 성공적으로 추가되었습니다.')
+      } else {
+        alert(`제공자 추가 실패: ${data.detail || data.message}`)
+      }
     } catch (error) {
       alert(`제공자 추가 중 오류: ${error.message}`)
     } finally {
@@ -213,6 +225,43 @@ export default function Settings() {
       }))
       setIsTesting(false)
     }
+  }
+
+  const handleDeleteLlmProvider = async (providerId) => {
+    if (!confirm('정말로 이 LLM 제공자를 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers/${providerId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        await loadLlmProviders()
+        alert('LLM 제공자가 성공적으로 삭제되었습니다.')
+      } else {
+        const data = await response.json()
+        alert(`삭제 실패: ${data.detail || data.message}`)
+      }
+    } catch (error) {
+      alert(`삭제 중 오류: ${error.message}`)
+    }
+  }
+
+  const handleEditLlmProvider = async (provider) => {
+    // 편집 모드로 전환
+    setNewProvider({
+      name: provider.name,
+      provider_type: provider.provider_type,
+      api_key: provider.api_key || '',
+      base_url: provider.base_url || '',
+      model_name: provider.model_name
+    })
+    
+    // 기존 제공자 삭제 후 새로 추가하는 방식
+    await handleDeleteLlmProvider(provider.id)
   }
 
   const handleActivateLlmProvider = async (providerId) => {
@@ -563,10 +612,18 @@ export default function Settings() {
                             활성화
                           </Button>
                         )}
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditLlmProvider(provider)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteLlmProvider(provider.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

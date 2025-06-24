@@ -15,9 +15,9 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     strictPort: true,
-    allowedHosts: 'all',
+    allowedHosts: ['3000-iki3p9hvtyj60w9kzj97k-c40973b5.manusvm.computer'],
     hmr: {
-      clientPort: 3000
+      clientPort: 443
     }
   }
 })

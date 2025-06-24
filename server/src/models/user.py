@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from src.db import Base
 
 class User(Base):
@@ -49,6 +50,9 @@ class User(Base):
     # 타임스탬프
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    # 관계
+    llm_providers = relationship("LLMProvider", back_populates="user")
 
     def to_dict(self):
         return {

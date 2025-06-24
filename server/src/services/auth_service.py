@@ -93,16 +93,10 @@ class AdvancedAuthService:
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
             return False, "비밀번호에 특수문자가 포함되어야 합니다."
         
-        # 일반적인 패스워드 패턴 검사
-        common_patterns = [
-            r'(.)\1{2,}',  # 같은 문자 3번 이상 반복
-            r'(012|123|234|345|456|567|678|789|890)',  # 연속된 숫자
-            r'(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)',  # 연속된 알파벳
-        ]
-        
-        for pattern in common_patterns:
-            if re.search(pattern, password.lower()):
-                return False, "비밀번호에 연속된 문자나 숫자는 사용할 수 없습니다."
+        # 일반적인 패스워드 패턴 검사 (완화된 버전)
+        # 너무 엄격한 검증을 완화하여 실용적으로 변경
+        if re.search(r'(.)\1{4,}', password):  # 같은 문자 5번 이상 반복만 제한
+            return False, "비밀번호에 같은 문자가 5번 이상 연속으로 사용될 수 없습니다."
         
         return True, "유효한 비밀번호입니다."
     
@@ -355,4 +349,47 @@ class TwoFactorAuth:
             )
         except ImportError:
             return f"otpauth://totp/{issuer}:{user_email}?secret={secret}&issuer={issuer}"
+
+
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+from src.db import get_db
+from src.models.user import User
+
+security = HTTPBearer()
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> User:
+    """현재 인증된 사용자 조회"""
+    try:
+        auth_service = AdvancedAuthService()
+        payload = jwt.decode(
+            credentials.credentials, 
+            auth_service.secret_key, 
+            algorithms=[auth_service.algorithm]
+        )
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="토큰이 유효하지 않습니다."
+            )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="토큰이 유효하지 않습니다."
+        )
+    
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="사용자를 찾을 수 없습니다."
+        )
+    
+    return user
 
