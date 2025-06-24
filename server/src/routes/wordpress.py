@@ -198,3 +198,24 @@ def test_site_connection(site_id: int, user = Depends(get_current_user)):
             "message": f"연결 테스트 중 오류: {str(e)}"
         }
 
+@router.put('/sites/{site_id}/toggle-active')
+def toggle_site_active(site_id: int, user = Depends(get_current_user)):
+    """WordPress 사이트 활성화 상태 토글"""
+    try:
+        site = wp_service.get_site(user.id, site_id)
+        if not site:
+            raise HTTPException(status_code=404, detail="사이트를 찾을 수 없습니다.")
+        
+        # 다른 사이트들을 비활성화하고 현재 사이트를 활성화
+        sites = wp_service.get_user_sites(user.id)
+        for s in sites:
+            s['is_active'] = (s['id'] == site_id)
+        
+        return {
+            "success": True,
+            "message": f"사이트 '{site['name']}'이 활성화되었습니다.",
+            "site": site
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

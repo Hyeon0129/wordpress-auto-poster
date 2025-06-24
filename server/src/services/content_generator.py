@@ -1,63 +1,135 @@
 import os
+import requests
 from datetime import datetime
 from typing import Dict, List, Optional
+from sqlalchemy.orm import Session
 from openai import OpenAI
 
+from src.db import get_db
+from src.models.llm_provider import LLMProvider
+
 class AdvancedContentGenerator:
-    """고급 AI 콘텐츠 생성 클래스 (데모 모드 지원)"""
+    """고급 AI 콘텐츠 생성 클래스 (OpenAI/Ollama 지원)"""
     
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, user_id: Optional[int] = None):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY", "demo-key")
+        self.user_id = user_id
         self.demo_mode = True
+        self.client = None
+        self.active_provider = None
         
-        try:
-            if self.api_key and self.api_key != "demo-key":
+        # 기본 OpenAI 클라이언트 설정 (하위 호환성)
+        if self.api_key and self.api_key != "demo-key":
+            try:
                 self.client = OpenAI(api_key=self.api_key)
                 self.demo_mode = False
-            else:
-                self.client = None
-                print("OpenAI API 키가 설정되지 않았습니다. 데모 모드로 실행됩니다.")
-        except Exception as e:
-            self.client = None
-            print(f"OpenAI 클라이언트 초기화 실패: {e}")
-    
+            except Exception as e:
+                print(f"OpenAI 클라이언트 초기화 실패: {e}")
+
+    def _get_active_llm_provider(self, db: Session) -> Optional[LLMProvider]:
+        """활성화된 LLM 제공자 조회"""
+        if not self.user_id:
+            return None
+            
+        return db.query(LLMProvider).filter(
+            LLMProvider.user_id == self.user_id,
+            LLMProvider.is_active == True
+        ).first()
+
+    def _generate_with_openai(self, prompt: str, model: str = "gpt-3.5-turbo", api_key: str = None) -> str:
+        """OpenAI API를 사용한 콘텐츠 생성"""
+        client = OpenAI(api_key=api_key or self.api_key)
+        
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "당신은 전문적인 SEO 콘텐츠 작성자입니다."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content
+
+    def _generate_with_ollama(self, prompt: str, model: str, base_url: str) -> str:
+        """Ollama API를 사용한 콘텐츠 생성"""
+        # base_url에서 기본 URL 추출
+        if base_url.endswith('/api/generate'):
+            ollama_base = base_url.replace('/api/generate', '')
+        else:
+            ollama_base = base_url
+        
+        response = requests.post(f"{ollama_base}/api/generate", 
+            json={
+                "model": model,
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=120
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result.get('response', '')
+        else:
+            raise Exception(f"Ollama API 오류: {response.status_code} - {response.text}")
+
     def generate_seo_optimized_content(self, keyword: str, content_type: str = 'blog_post', 
                                       tone: str = 'professional', target_audience: str = 'general',
                                       additional_keywords: List[str] = None, 
-                                      custom_instructions: str = "") -> Dict:
+                                      custom_instructions: str = "", db: Session = None) -> Dict:
         """SEO 최적화된 콘텐츠 생성"""
         
-        # 데모 모드인 경우 샘플 콘텐츠 반환
-        if self.demo_mode or not self.client:
+        # DB에서 활성화된 LLM 제공자 조회
+        active_provider = None
+        if db and self.user_id:
+            active_provider = self._get_active_llm_provider(db)
+        
+        # LLM 제공자가 없으면 기본 설정 또는 데모 모드 사용
+        if not active_provider and (self.demo_mode or not self.client):
             return self._generate_demo_content(keyword, content_type, tone)
         
         try:
-            # 실제 AI 생성 로직 (OpenAI API 사용)
             additional_keywords = additional_keywords or []
             
             prompt = f"""
-            다음 조건에 맞는 SEO 최적화된 {content_type} 콘텐츠를 작성해주세요:
-            
-            - 메인 키워드: {keyword}
-            - 추가 키워드: {', '.join(additional_keywords) if additional_keywords else '없음'}
-            - 톤: {tone}
-            - 타겟 독자: {target_audience}
-            - 추가 지시사항: {custom_instructions if custom_instructions else '없음'}
-            
-            제목과 본문을 포함하여 1000-1500단어로 작성해주세요.
+다음 조건에 맞는 SEO 최적화된 {content_type} 콘텐츠를 한국어로 작성해주세요:
+
+- 메인 키워드: {keyword}
+- 추가 키워드: {', '.join(additional_keywords) if additional_keywords else '없음'}
+- 톤: {tone}
+- 타겟 독자: {target_audience}
+- 추가 지시사항: {custom_instructions if custom_instructions else '없음'}
+
+다음 형식으로 작성해주세요:
+# 제목
+
+본문 내용 (1000-1500단어)
+
+제목에는 메인 키워드를 포함하고, 본문에는 키워드를 자연스럽게 2-3% 밀도로 사용해주세요.
+SEO에 최적화된 구조화된 내용으로 작성해주세요.
             """
             
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "당신은 전문적인 SEO 콘텐츠 작성자입니다."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=2000,
-                temperature=0.7
-            )
+            content = ""
             
-            content = response.choices[0].message.content
+            if active_provider:
+                # 활성화된 제공자 사용
+                if active_provider.provider_type == 'openai':
+                    content = self._generate_with_openai(
+                        prompt, 
+                        active_provider.model_name, 
+                        active_provider.api_key
+                    )
+                elif active_provider.provider_type == 'ollama':
+                    content = self._generate_with_ollama(
+                        prompt,
+                        active_provider.model_name,
+                        active_provider.base_url or 'http://localhost:11434/api/generate'
+                    )
+            else:
+                # 기본 OpenAI 클라이언트 사용
+                content = self._generate_with_openai(prompt)
             
             # 제목과 본문 분리
             lines = content.split('\n')

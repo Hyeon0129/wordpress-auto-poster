@@ -12,8 +12,7 @@ from src.services.seo_service import SEOAnalyzer
 
 router = APIRouter()
 
-# 콘텐츠 생성기 및 SEO 분석기 인스턴스
-content_generator = AdvancedContentGenerator(api_key=os.getenv("OPENAI_API_KEY"))
+# 콘텐츠 생성기 및 SEO 분석기 인스턴스 - 이제 동적으로 생성
 seo_analyzer = SEOAnalyzer()
 
 class AdvancedContentRequest(BaseModel):
@@ -43,11 +42,16 @@ class BulkContentRequest(BaseModel):
     target_audience: str = 'general'
 
 @router.post('/generate-advanced')
-def generate_advanced_content(payload: AdvancedContentRequest, user = Depends(get_current_user)):
+def generate_advanced_content(payload: AdvancedContentRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     """고급 SEO 최적화 콘텐츠 생성"""
     try:
         if not payload.keyword:
             raise HTTPException(status_code=400, detail="키워드는 필수입니다.")
+        
+        content_generator = AdvancedContentGenerator(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            user_id=current_user.id
+        )
         
         content_result = content_generator.generate_seo_optimized_content(
             keyword=payload.keyword,
@@ -55,7 +59,8 @@ def generate_advanced_content(payload: AdvancedContentRequest, user = Depends(ge
             tone=payload.tone,
             target_audience=payload.target_audience,
             additional_keywords=payload.additional_keywords or [],
-            custom_instructions=payload.custom_instructions
+            custom_instructions=payload.custom_instructions or "",
+            db=db
         )
         
         return {
@@ -66,11 +71,16 @@ def generate_advanced_content(payload: AdvancedContentRequest, user = Depends(ge
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post('/generate-variations')
-def generate_content_variations(payload: ContentVariationRequest, user = Depends(get_current_user)):
+def generate_content_variations(payload: ContentVariationRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     """콘텐츠 변형 생성"""
     try:
         if payload.variation_count > 5:
             raise HTTPException(status_code=400, detail="변형은 최대 5개까지 생성 가능합니다.")
+        
+        content_generator = AdvancedContentGenerator(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            user_id=current_user.id
+        )
         
         variations = content_generator.generate_content_variations(
             payload.base_content, 
@@ -88,9 +98,14 @@ def generate_content_variations(payload: ContentVariationRequest, user = Depends
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post('/generate-social-media')
-def generate_social_media_content(payload: SocialMediaRequest, user = Depends(get_current_user)):
+def generate_social_media_content(payload: SocialMediaRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     """소셜 미디어용 콘텐츠 생성"""
     try:
+        content_generator = AdvancedContentGenerator(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            user_id=current_user.id
+        )
+        
         social_content = content_generator.generate_social_media_content(payload.main_content)
         
         return {
@@ -143,11 +158,16 @@ def optimize_existing_content(payload: ContentOptimizationRequest, user = Depend
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post('/bulk-generate')
-def bulk_generate_content(payload: BulkContentRequest, user = Depends(get_current_user)):
+def bulk_generate_content(payload: BulkContentRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     """대량 콘텐츠 생성"""
     try:
         if len(payload.keywords) > 10:
             raise HTTPException(status_code=400, detail="대량 생성은 최대 10개 키워드까지 가능합니다.")
+        
+        content_generator = AdvancedContentGenerator(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            user_id=current_user.id
+        )
         
         results = []
         for keyword in payload.keywords:
@@ -156,7 +176,8 @@ def bulk_generate_content(payload: BulkContentRequest, user = Depends(get_curren
                     keyword=keyword,
                     content_type=payload.content_type,
                     tone=payload.tone,
-                    target_audience=payload.target_audience
+                    target_audience=payload.target_audience,
+                    db=db
                 )
                 results.append({
                     "keyword": keyword,
@@ -317,16 +338,20 @@ def analyze_keyword(payload: ContentRequest, user = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
 @router.post('/generate')
-def generate_basic_content(payload: ContentRequest, user = Depends(get_current_user)):
+def generate_basic_content(payload: ContentRequest, current_user = Depends(get_current_user), db: Session = Depends(get_db)):
     """기본 콘텐츠 생성 (하위 호환성)"""
     try:
+        content_generator = AdvancedContentGenerator(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            user_id=current_user.id
+        )
+        
         content_result = content_generator.generate_seo_optimized_content(
             keyword=payload.keyword,
             content_type=payload.content_type,
-            custom_instructions=payload.context
+            custom_instructions=payload.context,
+            db=db
         )
         
         return {

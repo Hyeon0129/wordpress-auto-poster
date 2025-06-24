@@ -130,6 +130,38 @@ async def update_llm_provider(
     db.refresh(provider)
     return {"message": "LLM 제공자 정보가 수정되었습니다."}
 
+@router.put("/providers/{provider_id}/toggle-active")
+async def toggle_llm_provider_active(
+    provider_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """LLM 제공자 활성화 상태 토글"""
+    provider = db.query(LLMProvider).filter(
+        LLMProvider.id == provider_id,
+        LLMProvider.user_id == current_user.id
+    ).first()
+    
+    if not provider:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="LLM 제공자를 찾을 수 없습니다."
+        )
+    
+    # 다른 제공자들을 비활성화하고 현재 제공자를 활성화
+    db.query(LLMProvider).filter(
+        LLMProvider.user_id == current_user.id
+    ).update({"is_active": False})
+    
+    provider.is_active = True
+    db.commit()
+    db.refresh(provider)
+    
+    return {
+        "message": f"LLM 제공자 '{provider.name}'이 활성화되었습니다.",
+        "provider_id": provider.id
+    }
+
 @router.get("/models")
 async def get_available_models(
     current_user: User = Depends(get_current_user)
@@ -137,7 +169,7 @@ async def get_available_models(
     """사용 가능한 모델 목록 조회"""
     return {
         "openai": ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"],
-        "ollama": ["qwen2.5:32b", "llama3.1:8b", "mistral:7b"]
+        "ollama": ["llama3.1:latest", "qwen3:30b", "hermes3:8b", "qwen2.5vl:7b"]
     }
 
 @router.post("/test")

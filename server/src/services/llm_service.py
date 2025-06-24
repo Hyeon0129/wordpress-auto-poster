@@ -177,20 +177,42 @@ class LLMService:
             elif provider_type == 'ollama':
                 # Ollama API 테스트
                 if not base_url:
-                    base_url = 'http://localhost:11434'
+                    base_url = 'http://localhost:11434/api/generate'
+                
+                # base_url에서 기본 URL 추출
+                if base_url.endswith('/api/generate'):
+                    ollama_base = base_url.replace('/api/generate', '')
+                else:
+                    ollama_base = base_url
                 
                 # Ollama 서버 상태 확인
-                response = requests.get(f"{base_url}/api/tags", timeout=5)
+                response = requests.get(f"{ollama_base}/api/tags", timeout=5)
                 if response.status_code == 200:
                     models = response.json().get('models', [])
                     model_names = [m['name'] for m in models]
                     
                     if model_name in model_names:
-                        return {
-                            'success': True,
-                            'message': f'Ollama 연결 성공 - {model_name} 모델 사용 가능',
-                            'available_models': model_names
-                        }
+                        # 실제 생성 테스트
+                        test_response = requests.post(f"{ollama_base}/api/generate", 
+                            json={
+                                "model": model_name,
+                                "prompt": "Hello",
+                                "stream": False
+                            },
+                            timeout=10
+                        )
+                        
+                        if test_response.status_code == 200:
+                            return {
+                                'success': True,
+                                'message': f'Ollama 연결 성공 - {model_name} 모델 테스트 완료',
+                                'available_models': model_names
+                            }
+                        else:
+                            return {
+                                'success': False,
+                                'message': f'Ollama 모델 테스트 실패: {test_response.text}'
+                            }
                     else:
                         return {
                             'success': False,
@@ -296,7 +318,55 @@ class LLMService:
         # 실제 분석 로직 또는 더미 반환
         return {"result": f"{analysis_type} 분석 결과", "content": content}
 
-    async def generate_content(self, prompt, model):
-        # 실제 생성 로직 또는 더미 반환
-        return f"{model}로 생성된 콘텐츠: {prompt}"
+    async def generate_content(self, prompt, model, user_id=None, provider_type=None, api_key=None, base_url=None):
+        """LLM을 사용한 실제 콘텐츠 생성"""
+        try:
+            if provider_type == 'openai' or not provider_type:
+                # OpenAI API 사용
+                if not api_key:
+                    api_key = os.getenv('OPENAI_API_KEY')
+                    if not api_key:
+                        raise ValueError("OpenAI API 키가 필요합니다.")
+                
+                client = OpenAI(api_key=api_key)
+                response = client.chat.completions.create(
+                    model=model or 'gpt-3.5-turbo',
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=2000,
+                    temperature=0.7
+                )
+                
+                return response.choices[0].message.content
+                
+            elif provider_type == 'ollama':
+                # Ollama API 사용
+                if not base_url:
+                    base_url = 'http://localhost:11434/api/generate'
+                
+                # base_url에서 기본 URL 추출
+                if base_url.endswith('/api/generate'):
+                    ollama_base = base_url.replace('/api/generate', '')
+                else:
+                    ollama_base = base_url
+                
+                response = requests.post(f"{ollama_base}/api/generate", 
+                    json={
+                        "model": model,
+                        "prompt": prompt,
+                        "stream": False
+                    },
+                    timeout=60
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get('response', '')
+                else:
+                    raise Exception(f"Ollama API 오류: {response.status_code} - {response.text}")
+            
+            else:
+                raise ValueError(f"지원하지 않는 제공자 타입: {provider_type}")
+                
+        except Exception as e:
+            raise Exception(f"콘텐츠 생성 실패: {str(e)}")
 

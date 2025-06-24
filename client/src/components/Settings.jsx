@@ -38,7 +38,7 @@ export default function Settings() {
   const { token, user } = useAuth()
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
-  const [testResults, setTestResults] = useState({})
+
   const [showPassword, setShowPassword] = useState({})
   
   // WordPress 사이트 설정
@@ -74,6 +74,8 @@ export default function Settings() {
   // 수정 모달 상태
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editProvider, setEditProvider] = useState(null)
+  const [wpEditModalOpen, setWpEditModalOpen] = useState(false)
+  const [editSite, setEditSite] = useState(null)
 
   const { theme } = useTheme()
 
@@ -122,6 +124,28 @@ export default function Settings() {
 
     setIsSaving(true)
     try {
+      // 먼저 연결 테스트 수행
+      const testResponse = await fetch(`${API_BASE_URL}/api/wordpress/test-connection`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          url: newSite.url,
+          username: newSite.username,
+          password: newSite.password
+        })
+      })
+
+      const testResult = await testResponse.json()
+      
+      if (!testResult.success) {
+        alert(`연결 테스트 실패: ${testResult.message}`)
+        return
+      }
+
+      // 연결 테스트 성공 시 사이트 추가
       const response = await fetch(`${API_BASE_URL}/api/wordpress/connect`, {
         method: 'POST',
         headers: {
@@ -134,9 +158,9 @@ export default function Settings() {
       const data = await response.json()
 
       if (response.ok) {
-        setWpSites(prev => [...prev, { ...newSite, id: Date.now(), is_active: true }])
+        await loadSettings() // 최신 데이터로 새로고침
         setNewSite({ name: '', url: '', username: '', password: '' })
-        alert('WordPress 사이트가 성공적으로 추가되었습니다.')
+        alert('WordPress 사이트가 성공적으로 추가되고 활성화되었습니다!')
       } else {
         alert(`사이트 추가 실패: ${data.detail || data.error}`)
       }
@@ -147,37 +171,7 @@ export default function Settings() {
     }
   }
 
-  const handleTestWpConnection = async (site) => {
-    setIsTesting(true)
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/wordpress/test-connection`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          url: site.url,
-          username: site.username,
-          password: site.password
-        })
-      })
 
-      const data = await response.json()
-      setTestResults(prev => ({
-        ...prev,
-        [`wp_${site.id}`]: data
-      }))
-
-    } catch (error) {
-      setTestResults(prev => ({
-        ...prev,
-        [`wp_${site.id}`]: { success: false, message: error.message }
-      }))
-    } finally {
-      setIsTesting(false)
-    }
-  }
 
   const handleAddLlmProvider = async () => {
     if (!newProvider.name || !newProvider.provider_type) {
@@ -185,8 +179,37 @@ export default function Settings() {
       return
     }
 
+    if (newProvider.provider_type === 'openai' && !newProvider.api_key) {
+      alert('OpenAI API 키를 입력해주세요.')
+      return
+    }
+
     setIsSaving(true)
     try {
+      // 먼저 연결 테스트 수행
+      const testResponse = await fetch(`${API_BASE_URL}/api/llm/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: newProvider.name,
+          provider_type: newProvider.provider_type,
+          api_key: newProvider.api_key,
+          base_url: newProvider.base_url,
+          model_name: newProvider.model_name
+        })
+      })
+
+      const testResult = await testResponse.json()
+
+      if (!testResult.success) {
+        alert(`연결 테스트 실패: ${testResult.message}`)
+        return
+      }
+
+      // 연결 테스트 성공 시 제공자 추가
       const response = await fetch(`${API_BASE_URL}/api/llm/providers`, {
         method: 'POST',
         headers: {
@@ -207,7 +230,7 @@ export default function Settings() {
           base_url: '',
           model_name: 'gpt-3.5-turbo'
         })
-        alert('LLM 제공자가 성공적으로 추가되었습니다.')
+        alert('LLM 제공자가 성공적으로 추가되고 활성화되었습니다!')
       } else {
         alert(`제공자 추가 실패: ${data.detail || data.message}`)
       }
@@ -218,39 +241,7 @@ export default function Settings() {
     }
   }
 
-  const handleTestLlmProvider = async (provider) => {
-    setIsTesting(true)
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/llm/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: provider.name,
-          provider_type: provider.provider_type,
-          api_key: provider.api_key,
-          base_url: provider.base_url,
-          model_name: provider.model_name
-        })
-      })
-      const data = await response.json()
-      setTestResults(prev => ({
-        ...prev,
-        [`llm_${provider.id}`]: data
-      }))
-      setApiConnected(!!data.success)
-    } catch (error) {
-      setTestResults(prev => ({
-        ...prev,
-        [`llm_${provider.id}`]: { success: false, message: error.message }
-      }))
-      setApiConnected(false)
-    } finally {
-      setIsTesting(false)
-    }
-  }
+
 
   const handleDeleteLlmProvider = async (providerId) => {
     if (!confirm('정말로 이 LLM 제공자를 삭제하시겠습니까?')) {
@@ -278,6 +269,135 @@ export default function Settings() {
   const handleEditLlmProvider = (provider) => {
     setEditProvider(provider)
     setEditModalOpen(true)
+  }
+
+  const handleEditWpSite = (site) => {
+    setEditSite(site)
+    setWpEditModalOpen(true)
+  }
+
+  const handleEditSiteSave = async (updatedSite) => {
+    if (!updatedSite.name || !updatedSite.url || !updatedSite.username || !updatedSite.password) {
+      alert('모든 필드를 입력해주세요.')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // 먼저 연결 테스트 수행
+      const testResponse = await fetch(`${API_BASE_URL}/api/wordpress/test-connection`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          url: updatedSite.url,
+          username: updatedSite.username,
+          password: updatedSite.password
+        })
+      })
+
+      const testResult = await testResponse.json()
+      
+      if (!testResult.success) {
+        alert(`연결 테스트 실패: ${testResult.message}`)
+        return
+      }
+
+      // 연결 테스트 성공 시 사이트 수정
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites/${updatedSite.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: updatedSite.name,
+          url: updatedSite.url,
+          username: updatedSite.username,
+          password: updatedSite.password
+        })
+      })
+
+      if (response.ok) {
+        setWpEditModalOpen(false)
+        setEditSite(null)
+        await loadSettings()
+        alert('사이트 정보가 성공적으로 수정되었습니다!')
+      } else {
+        const errorData = await response.json()
+        alert(`오류: ${errorData.detail || '사이트 수정에 실패했습니다.'}`)
+      }
+    } catch (error) {
+      console.error('사이트 수정 오류:', error)
+      alert('사이트 수정 중 오류가 발생했습니다.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDeleteWpSite = async (siteId) => {
+    if (!confirm('정말로 이 사이트를 삭제하시겠습니까?')) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites/${siteId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        await loadSettings()
+        alert('사이트가 삭제되었습니다.')
+      } else {
+        alert('사이트 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('사이트 삭제 오류:', error)
+      alert('사이트 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleToggleWpSiteActive = async (siteId, currentStatus) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/wordpress/sites/${siteId}/toggle-active`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        await loadSettings()
+      } else {
+        alert('사이트 활성화 상태 변경에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('사이트 활성화 변경 오류:', error)
+      alert('사이트 활성화 상태 변경 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleToggleLlmProviderActive = async (providerId, currentStatus) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/llm/providers/${providerId}/toggle-active`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        await loadLlmProviders()
+      } else {
+        alert('LLM 제공자 활성화 상태 변경에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('LLM 제공자 활성화 변경 오류:', error)
+      alert('LLM 제공자 활성화 상태 변경 중 오류가 발생했습니다.')
+    }
   }
 
   const togglePasswordVisibility = (id) => {
@@ -327,8 +447,42 @@ export default function Settings() {
 
   // 수정 모달 저장
   const handleEditProviderSave = async (updated) => {
+    if (!updated.name || !updated.provider_type) {
+      alert('이름과 제공자 타입을 입력해주세요.')
+      return
+    }
+
+    if (updated.provider_type === 'openai' && !updated.api_key) {
+      alert('OpenAI API 키를 입력해주세요.')
+      return
+    }
+
     setIsSaving(true)
     try {
+      // 먼저 연결 테스트 수행
+      const testResponse = await fetch(`${API_BASE_URL}/api/llm/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: updated.name,
+          provider_type: updated.provider_type,
+          api_key: updated.api_key,
+          base_url: updated.base_url,
+          model_name: updated.model_name
+        })
+      })
+
+      const testResult = await testResponse.json()
+
+      if (!testResult.success) {
+        alert(`연결 테스트 실패: ${testResult.message}`)
+        return
+      }
+
+      // 연결 테스트 성공 시 제공자 수정
       const response = await fetch(`${API_BASE_URL}/api/llm/providers/${updated.id}`, {
         method: 'PUT',
         headers: {
@@ -341,7 +495,7 @@ export default function Settings() {
         await loadLlmProviders()
         setEditModalOpen(false)
         setEditProvider(null)
-        alert('LLM 제공자 정보가 수정되었습니다.')
+        alert('LLM 제공자 정보가 성공적으로 수정되었습니다!')
       } else {
         const data = await response.json()
         alert(`수정 실패: ${data.detail || data.message}`)
@@ -439,13 +593,7 @@ export default function Settings() {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="auto-activate"
-                  checked={true}
-                />
-                <Label htmlFor="auto-activate">활성화</Label>
-              </div>
+
 
               <Button onClick={handleAddWpSite} disabled={isSaving} className="w-full">
                 {isSaving ? (
@@ -478,28 +626,33 @@ export default function Settings() {
                         <p className="text-sm text-muted-foreground">{site.url}</p>
                         <div className="flex items-center space-x-2 mt-2">
                           <Badge variant={site.is_active ? "default" : "secondary"}>
-                            {site.is_active ? '활성' : '비활성'}
+                            {site.is_active ? '활성화됨' : '비활성'}
                           </Badge>
-                          {testResults[`wp_${site.id}`] && (
-                            <Badge variant={testResults[`wp_${site.id}`].success ? "default" : "destructive"}>
-                              {testResults[`wp_${site.id}`].success ? '연결 성공' : '연결 실패'}
-                            </Badge>
-                          )}
+                          <Badge variant="default" className="bg-green-500">
+                            연결됨
+                          </Badge>
                         </div>
                       </div>
                       <div className="flex space-x-2">
                         <Button 
+                          variant={site.is_active ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleToggleWpSiteActive(site.id, site.is_active)}
+                        >
+                          {site.is_active ? '활성화됨' : '활성화'}
+                        </Button>
+                        <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleTestWpConnection(site)}
-                          disabled={isTesting}
+                          onClick={() => handleEditWpSite(site)}
                         >
-                          <TestTube className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteWpSite(site.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -541,8 +694,9 @@ export default function Settings() {
                     onValueChange={(value) => setNewProvider(prev => ({ 
                       ...prev, 
                       provider_type: value,
-                      model_name: value === 'openai' ? 'gpt-3.5-turbo' : 'qwen3:30b',
-                      base_url: value === 'openai' ? '' : 'http://localhost:11434/v1'
+                      model_name: value === 'openai' ? 'gpt-3.5-turbo' : 'llama3.1:latest',
+                      base_url: value === 'openai' ? '' : 'http://localhost:11434/api/generate',
+                      api_key: value === 'ollama' ? '' : prev.api_key
                     }))}
                   >
                     <SelectTrigger>
@@ -572,47 +726,48 @@ export default function Settings() {
                         </>
                       ) : (
                         <>
+                          <SelectItem value="llama3.1:latest">llama3.1:latest</SelectItem>
                           <SelectItem value="qwen3:30b">qwen3:30b</SelectItem>
-                          <SelectItem value="llama3.1:8b">llama3.1:8b</SelectItem>
-                          <SelectItem value="mistral:7b">mistral:7b</SelectItem>
+                          <SelectItem value="hermes3:8b">hermes3:8b</SelectItem>
+                          <SelectItem value="qwen2.5vl:7b">qwen2.5vl:7b</SelectItem>
                         </>
                       )}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="api-key">
-                    API 키 {newProvider.provider_type === 'openai' ? '*' : '(선택사항)'}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="api-key"
-                      type={showPassword.newProvider ? "text" : "password"}
-                      placeholder={newProvider.provider_type === 'openai' ? 'sk-...' : 'Ollama는 API 키가 필요하지 않습니다'}
-                      value={newProvider.api_key}
-                      onChange={(e) => setNewProvider(prev => ({ ...prev, api_key: e.target.value }))}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => togglePasswordVisibility('newProvider')}
-                    >
-                      {showPassword.newProvider ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
+                {newProvider.provider_type === 'openai' && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="api-key">API 키 *</Label>
+                    <div className="relative">
+                      <Input
+                        id="api-key"
+                        type={showPassword.newProvider ? "text" : "password"}
+                        placeholder="sk-..."
+                        value={newProvider.api_key}
+                        onChange={(e) => setNewProvider(prev => ({ ...prev, api_key: e.target.value }))}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => togglePasswordVisibility('newProvider')}
+                      >
+                        {showPassword.newProvider ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
                 {newProvider.provider_type === 'ollama' && (
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="base-url">Base URL</Label>
+                    <Label htmlFor="base-url">Ollama API 주소</Label>
                     <Input
                       id="base-url"
-                      placeholder="http://localhost:11434/v1"
+                      placeholder="http://localhost:11434/api/generate"
                       value={newProvider.base_url}
                       onChange={(e) => setNewProvider(prev => ({ ...prev, base_url: e.target.value }))}
                     />
@@ -644,52 +799,47 @@ export default function Settings() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {llmProviders.map((provider) => {
-                    const testResult = testResults[`llm_${provider.id}`]
-                    return (
-                      <div key={provider.id} className="flex flex-col gap-2 p-4 border border-border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{provider.name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {provider.provider_type === 'openai' ? 'OpenAI' : 'Ollama'} - {provider.model_name}
-                            </p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Tooltip content="API 연결 테스트">
-                              <Button
-                                variant={testResult ? (testResult.success ? 'default' : 'destructive') : 'outline'}
-                                size="sm"
-                                onClick={() => handleTestLlmProvider(provider)}
-                                disabled={isTesting}
-                              >
-                                {isTesting ? <Loader2 className="animate-spin h-4 w-4" /> : <TestTube className="h-4 w-4" />}
-                              </Button>
-                            </Tooltip>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditLlmProvider(provider)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeleteLlmProvider(provider.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                  {llmProviders.map((provider) => (
+                    <div key={provider.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{provider.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {provider.provider_type === 'openai' ? 'OpenAI' : 'Ollama'} - {provider.model_name}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Badge variant={provider.is_active ? "default" : "secondary"}>
+                            {provider.is_active ? '활성화됨' : '비활성'}
+                          </Badge>
+                          <Badge variant="default" className="bg-green-500">
+                            연결됨
+                          </Badge>
                         </div>
-                        {testResult && (
-                          <div className={`text-sm mt-1 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}>
-                            {testResult.success ? 'API 연결 성공!' : `API 연결 실패: ${testResult.message || ''}`}
-                          </div>
-                        )}
                       </div>
-                    )
-                  })}
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant={provider.is_active ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleToggleLlmProviderActive(provider.id, provider.is_active)}
+                        >
+                          {provider.is_active ? '활성화됨' : '활성화'}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditLlmProvider(provider)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteLlmProvider(provider.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -831,6 +981,84 @@ export default function Settings() {
         </TabsContent>
       </Tabs>
 
+      {/* WordPress 사이트 수정 모달 */}
+      {wpEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div
+            className={`bg-background rounded-2xl shadow-2xl w-full max-w-lg p-8 border border-border relative animate-fadeIn ${theme === 'dark' ? 'dark' : 'light'}`}
+            onClick={e => e.stopPropagation()}
+            style={{ minWidth: 360 }}
+          >
+            <button
+              onClick={() => setWpEditModalOpen(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors text-2xl font-bold focus:outline-none"
+              aria-label="닫기"
+            >
+              &times;
+            </button>
+            <h2 className="text-2xl font-bold mb-6 text-center">WordPress 사이트 정보 수정</h2>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="edit-site-name">사이트 이름</label>
+                <Input
+                  id="edit-site-name"
+                  value={editSite?.name || ''}
+                  onChange={e => setEditSite(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="edit-site-url">사이트 URL</label>
+                <Input
+                  id="edit-site-url"
+                  value={editSite?.url || ''}
+                  onChange={e => setEditSite(prev => ({ ...prev, url: e.target.value }))}
+                  className="w-full"
+                  placeholder="https://myblog.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="edit-site-username">사용자명</label>
+                <Input
+                  id="edit-site-username"
+                  value={editSite?.username || ''}
+                  onChange={e => setEditSite(prev => ({ ...prev, username: e.target.value }))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="edit-site-password">비밀번호</label>
+                <Input
+                  id="edit-site-password"
+                  type="password"
+                  value={editSite?.password || ''}
+                  onChange={e => setEditSite(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full"
+                  placeholder="애플리케이션 패스워드"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-8">
+              <Button
+                onClick={() => handleEditSiteSave(editSite)}
+                disabled={isSaving}
+                className="px-6 py-2 rounded-lg text-base font-semibold shadow-sm"
+              >
+                {isSaving ? '저장 중...' : '저장'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setWpEditModalOpen(false)}
+                className="px-6 py-2 rounded-lg text-base font-semibold"
+              >
+                취소
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* LLM 정보 수정 모달 (중앙, 심플&고급스럽게) */}
       {editModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -858,24 +1086,56 @@ export default function Settings() {
                   autoFocus
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" htmlFor="edit-provider-api-key">API Key</label>
-                <Input
-                  id="edit-provider-api-key"
-                  type="password"
-                  value={editProvider?.api_key || ''}
-                  onChange={e => setEditProvider(prev => ({ ...prev, api_key: e.target.value }))}
-                  className="w-full"
-                />
-              </div>
+              {editProvider?.provider_type === 'openai' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1" htmlFor="edit-provider-api-key">API Key</label>
+                  <Input
+                    id="edit-provider-api-key"
+                    type="password"
+                    value={editProvider?.api_key || ''}
+                    onChange={e => setEditProvider(prev => ({ ...prev, api_key: e.target.value }))}
+                    className="w-full"
+                  />
+                </div>
+              )}
+              {editProvider?.provider_type === 'ollama' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1" htmlFor="edit-provider-base-url">Ollama API 주소</label>
+                  <Input
+                    id="edit-provider-base-url"
+                    value={editProvider?.base_url || ''}
+                    onChange={e => setEditProvider(prev => ({ ...prev, base_url: e.target.value }))}
+                    className="w-full"
+                    placeholder="http://localhost:11434/api/generate"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="edit-provider-model">모델명</label>
-                <Input
-                  id="edit-provider-model"
+                <Select
                   value={editProvider?.model_name || ''}
-                  onChange={e => setEditProvider(prev => ({ ...prev, model_name: e.target.value }))}
-                  className="w-full"
-                />
+                  onValueChange={(value) => setEditProvider(prev => ({ ...prev, model_name: value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="모델 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {editProvider?.provider_type === 'openai' ? (
+                      <>
+                        <SelectItem value="gpt-3.5-turbo">gpt-3.5-turbo</SelectItem>
+                        <SelectItem value="gpt-4">gpt-4</SelectItem>
+                        <SelectItem value="gpt-4-turbo">gpt-4-turbo</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="llama3.1:latest">llama3.1:latest</SelectItem>
+                        <SelectItem value="qwen3:30b">qwen3:30b</SelectItem>
+                        <SelectItem value="hermes3:8b">hermes3:8b</SelectItem>
+                        <SelectItem value="qwen2.5vl:7b">qwen2.5vl:7b</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-8">
