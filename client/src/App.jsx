@@ -5,7 +5,7 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import Dashboard from './components/Dashboard'
-import ContentGenerator from './components/ContentGenerator'
+import MultiStepContentGenerator from './components/MultiStepContentGenerator'
 import KeywordAnalyzer from './components/KeywordAnalyzer'
 import SeoOptimizer from './components/SeoOptimizer'
 import Settings from './components/Settings'
@@ -62,7 +62,7 @@ function MainLayout() {
         <main className="p-6">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/content" element={<ContentGenerator />} />
+            <Route path="/content" element={<MultiStepContentGenerator />} />
             <Route path="/keywords" element={<KeywordAnalyzer />} />
             <Route path="/seo" element={<SeoOptimizer />} />
             <Route path="/history" element={<div className="text-center py-20"><h2 className="text-2xl font-bold">포스트 기록</h2><p className="text-muted-foreground mt-2">곧 출시될 예정입니다</p></div>} />

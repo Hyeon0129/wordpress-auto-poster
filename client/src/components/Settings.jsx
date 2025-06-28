@@ -209,7 +209,7 @@ export default function Settings() {
         return
       }
 
-      // 연결 테스트 성공 시 제공자 추가
+      
       const response = await fetch(`${API_BASE_URL}/api/llm/providers`, {
         method: 'POST',
         headers: {
