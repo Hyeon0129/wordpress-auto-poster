@@ -100,7 +100,7 @@ const PERSPECTIVES = [
   { value: 'mixed', label: '혼합', desc: '상황에 따라 적절히 사용' },
 ]
 
-export default function MultiStepContentGenerator() {
+export default function MultiStepContentGenerator({ sidebarOpen = true }) {
   const { token } = useAuth()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationProgress, setGenerationProgress] = useState(0)
@@ -134,6 +134,7 @@ export default function MultiStepContentGenerator() {
   })
 
   const [secondaryKeywordInput, setSecondaryKeywordInput] = useState('')
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false)
 
   useEffect(() => {
     loadWordPressSites()
@@ -180,6 +181,42 @@ export default function MultiStepContentGenerator() {
       ...prev,
       secondary_keywords: prev.secondary_keywords.filter(k => k !== keyword)
     }))
+  }
+
+  const handleSuggestTitle = async () => {
+    // 필수 필드 검증
+    if (!formData.keyword.trim()) {
+      setError('Topic을 먼저 입력해주세요')
+      return
+    }
+    if (!formData.primary_keyword.trim()) {
+      setError('Primary Keyword를 먼저 입력해주세요')
+      return
+    }
+
+    setError('')
+    setIsGeneratingTitle(true)
+    
+    try {
+      // TODO: 나중에 백엔드 API 연결
+      // 임시로 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // 임시 제목 예시
+      const suggestedTitles = [
+        `${formData.primary_keyword} 완전 가이드: 초보자를 위한 단계별 설명`,
+        `${formData.primary_keyword}의 모든 것: 전문가가 알려주는 핵심 정보`,
+        `${formData.primary_keyword} 마스터하기: 실무에서 바로 활용하는 방법`
+      ]
+      
+      // 첫 번째 제목을 자동으로 설정 (실제로는 사용자가 선택할 수 있도록 모달 등을 구현할 수 있음)
+      setFormData(prev => ({ ...prev, title: suggestedTitles[0] }))
+      
+    } catch (error) {
+      setError('제목 추천 중 오류가 발생했습니다.')
+    } finally {
+      setIsGeneratingTitle(false)
+    }
   }
 
   const validateForm = () => {
@@ -371,334 +408,342 @@ export default function MultiStepContentGenerator() {
   }
 
   const renderUnifiedForm = () => (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-      {/* 왼쪽 컬럼 */}
-      <div className="space-y-6">
-        {/* 기본 정보 카드 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5" />
-              <span>기본 정보</span>
-            </CardTitle>
-            <CardDescription>콘텐츠의 핵심 정보를 입력하세요</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Topic */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Topic</Label>
-              <Input
-                placeholder="예: tensorflow 설치"
-                value={formData.keyword}
-                onChange={(e) => handleInputChange('keyword', e.target.value)}
-                className="h-11"
-              />
-            </div>
-
-            {/* Target Location & Language */}
-            <div className="grid grid-cols-2 gap-4">
+    <div className="flex h-full">
+      {/* 좌측 컬럼 */}
+      <div className="flex-1 pr-4">
+        <div className="space-y-6 h-full flex flex-col">
+          {/* 기본 정보 카드 */}
+          <Card className="flex-grow">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Target className="h-5 w-5 text-blue-600" />
+                <span>기본 정보</span>
+              </CardTitle>
+              <CardDescription>콘텐츠의 핵심 정보를 입력하세요</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Topic */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Target Location</Label>
-                <Select value={formData.target_country} onValueChange={(value) => handleInputChange('target_country', value)}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COUNTRIES.map((country) => (
-                      <SelectItem key={country.value} value={country.value}>
-                        {country.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Language</Label>
-                <Select value={formData.content_language} onValueChange={(value) => handleInputChange('content_language', value)}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LANGUAGES.map((language) => (
-                      <SelectItem key={language.value} value={language.value}>
-                        {language.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Title & Primary Keyword */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">콘텐츠 제목 (선택사항)</Label>
+                <Label className="text-sm font-semibold text-foreground">Topic</Label>
                 <Input
-                  placeholder="원하는 제목이 있다면 입력하세요"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="h-11"
+                  placeholder="예: tensorflow 설치"
+                  value={formData.keyword}
+                  onChange={(e) => handleInputChange('keyword', e.target.value)}
+                  className="h-11 border-border focus:border-primary focus:ring-primary"
                 />
               </div>
 
+              {/* Target Location & Language */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-foreground">Target Location</Label>
+                  <Select value={formData.target_country} onValueChange={(value) => handleInputChange('target_country', value)}>
+                    <SelectTrigger className="h-11 border-border focus:border-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COUNTRIES.map((country) => (
+                        <SelectItem key={country.value} value={country.value}>
+                          {country.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-foreground">Language</Label>
+                  <Select value={formData.content_language} onValueChange={(value) => handleInputChange('content_language', value)}>
+                    <SelectTrigger className="h-11 border-border focus:border-primary">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((language) => (
+                        <SelectItem key={language.value} value={language.value}>
+                          {language.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Primary Keyword */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Primary Keyword</Label>
+                <Label className="text-sm font-semibold text-foreground">Primary Keyword</Label>
                 <Input
                   placeholder="SEO 최적화의 핵심이 될 주요 키워드"
                   value={formData.primary_keyword}
                   onChange={(e) => handleInputChange('primary_keyword', e.target.value)}
-                  className="h-11"
+                  className="h-11 border-border focus:border-primary focus:ring-primary"
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* 콘텐츠 유형 & 스타일 카드 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Palette className="h-5 w-5" />
-              <span>콘텐츠 유형 & 스타일</span>
-            </CardTitle>
-            <CardDescription>콘텐츠의 유형과 스타일을 선택하세요</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Article Type */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Article Type</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {CONTENT_TYPES.map((type) => {
-                  const TypeIcon = type.icon
-                  return (
-                    <div
-                      key={type.value}
-                      className={`flex items-center space-x-2 px-3 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
-                        formData.content_type === type.value
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => handleInputChange('content_type', type.value)}
-                    >
-                      <TypeIcon className="h-4 w-4" />
-                      <span className="font-medium text-sm">{type.label}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Writing Style */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Writing Style</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {TONES.map((tone) => (
-                  <div
-                    key={tone.value}
-                    className={`px-3 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-sm text-center ${
-                      formData.tone === tone.value
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handleInputChange('tone', tone.value)}
+              {/* 콘텐츠 제목 */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-foreground">콘텐츠 제목 (선택사항)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSuggestTitle}
+                    disabled={isGeneratingTitle}
+                    className="h-7 px-3 text-xs border-border hover:bg-muted"
                   >
-                    <div className="font-medium text-sm">{tone.label}</div>
-                  </div>
-                ))}
+                    {isGeneratingTitle ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        생성중...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        제목추천
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <Input
+                  placeholder="원하는 제목이 있다면 입력하세요"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  className="h-11 border-border focus:border-primary focus:ring-primary"
+                />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Secondary Keywords 카드 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Hash className="h-5 w-5" />
-              <span>Secondary Keywords</span>
-            </CardTitle>
-            <CardDescription>콘텐츠에 포함될 보조 키워드들을 추가하세요 (최대 5개)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex space-x-2">
-              <Input
-                placeholder="보조 키워드 입력 후 Enter"
-                value={secondaryKeywordInput}
-                onChange={(e) => setSecondaryKeywordInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addSecondaryKeyword()}
-                className="flex-1 h-11"
-              />
-              <Button 
-                onClick={addSecondaryKeyword}
-                disabled={formData.secondary_keywords.length >= 5 || !secondaryKeywordInput.trim()}
-                className="h-11 px-4"
-              >
-                추가
-              </Button>
-            </div>
-            
-            {formData.secondary_keywords.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg">
-                {formData.secondary_keywords.map((keyword, index) => (
-                  <Badge key={index} variant="secondary" className="px-3 py-1">
-                    {keyword}
-                    <X
-                      className="h-3 w-3 ml-2 cursor-pointer hover:text-red-500"
-                      onClick={() => removeSecondaryKeyword(keyword)}
-                    />
-                  </Badge>
-                ))}
+          {/* 콘텐츠 유형 & 스타일 카드 */}
+          <Card className="flex-grow">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Palette className="h-5 w-5 text-purple-600" />
+                <span>콘텐츠 유형 & 스타일</span>
+              </CardTitle>
+              <CardDescription>콘텐츠의 유형과 스타일을 선택하세요</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Article Type */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-foreground">Article Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {CONTENT_TYPES.map((type) => {
+                    const TypeIcon = type.icon
+                    return (
+                      <div
+                        key={type.value}
+                        className={`flex items-center space-x-2 px-3 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                          formData.content_type === type.value
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
+                            : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                        }`}
+                        onClick={() => handleInputChange('content_type', type.value)}
+                      >
+                        <TypeIcon className="h-4 w-4" />
+                        <span className="font-medium text-sm">{type.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            )}
-            
-            <div className="text-sm text-gray-500">
-              {formData.secondary_keywords.length}/5 키워드 사용 중
-            </div>
-          </CardContent>
-        </Card>
+
+              {/* Writing Style */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-foreground">Writing Style</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {TONES.map((tone) => (
+                    <div
+                      key={tone.value}
+                      className={`px-3 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
+                        formData.tone === tone.value
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
+                          : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                      }`}
+                      onClick={() => handleInputChange('tone', tone.value)}
+                    >
+                      <div className="font-medium text-sm">{tone.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Secondary Keywords 카드 */}
+          <Card className="flex-grow">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Hash className="h-5 w-5 text-green-600" />
+                <span>Secondary Keywords</span>
+              </CardTitle>
+              <CardDescription>콘텐츠에 포함될 보조 키워드들을 추가하세요 (최대 5개)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex space-x-2">
+                <Input
+                  placeholder="보조 키워드 입력 후 Enter"
+                  value={secondaryKeywordInput}
+                  onChange={(e) => setSecondaryKeywordInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addSecondaryKeyword()}
+                  className="flex-1 h-11 border-border focus:border-primary focus:ring-primary"
+                />
+                <Button 
+                  onClick={addSecondaryKeyword}
+                  disabled={formData.secondary_keywords.length >= 5 || !secondaryKeywordInput.trim()}
+                  className="h-11 px-4 bg-primary hover:bg-primary/90"
+                >
+                  추가
+                </Button>
+              </div>
+              
+              {formData.secondary_keywords.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
+                  {formData.secondary_keywords.map((keyword, index) => (
+                    <Badge key={index} variant="secondary" className="px-3 py-1 flex items-center bg-muted-foreground/10 text-foreground border border-border">
+                      <span>{keyword}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSecondaryKeyword(keyword)}
+                        className="ml-2 hover:text-red-500 focus:outline-none"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              <div className="text-sm text-gray-500">
+                {formData.secondary_keywords.length}/5 키워드 사용 중
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* 오른쪽 컬럼 */}
-      <div className="space-y-6">
-        {/* Article Structure 카드 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Article Structure and Length</span>
-            </CardTitle>
-            <CardDescription>Choose the best format for your content goals.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {WORD_COUNTS.map((count) => (
-                <label
-                  key={count.value}
-                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
-                    formData.word_count === count.value
-                      ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="word_count"
-                    value={count.value}
-                    checked={formData.word_count === count.value}
-                    onChange={() => handleInputChange('word_count', count.value)}
-                    className="sr-only"
-                  />
-                  <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
-                    formData.word_count === count.value ? 'border-blue-500' : 'border-gray-300'
-                  }`}>
-                    {formData.word_count === count.value && (
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{count.label}</div>
-                    <div className="text-xs text-gray-500">{count.desc}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* 우측 컬럼 */}
+      <div className="flex-1 pl-4">
+        <div className="space-y-6 h-full flex flex-col">
+          {/* Article Structure 카드 */}
+          <Card className="flex-grow">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <FileText className="h-5 w-5 text-orange-600" />
+                <span>Article Structure and Length</span>
+              </CardTitle>
+              <CardDescription>Choose the best format for your content goals.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {WORD_COUNTS.map((count) => (
+                  <label
+                    key={count.value}
+                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                      formData.word_count === count.value
+                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200 shadow-sm dark:border-muted-foreground dark:bg-muted dark:ring-muted-foreground/20'
+                        : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="word_count"
+                      value={count.value}
+                      checked={formData.word_count === count.value}
+                      onChange={() => handleInputChange('word_count', count.value)}
+                      className="sr-only"
+                    />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
+                      formData.word_count === count.value ? 'border-blue-500 dark:border-muted-foreground' : 'border-border'
+                    }`}>
+                      {formData.word_count === count.value && (
+                        <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-muted-foreground"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-foreground">{count.label}</div>
+                      <div className="text-xs text-muted-foreground">{count.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Point of View 카드 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Eye className="h-5 w-5" />
-              <span>Point of view</span>
-            </CardTitle>
-            <CardDescription>Choose the narrative perspective for your article</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {PERSPECTIVES.map((perspective) => (
-                <div
-                  key={perspective.value}
-                  className={`px-4 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
-                    formData.perspective === perspective.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => handleInputChange('perspective', perspective.value)}
-                >
-                  <div className="font-medium text-sm">{perspective.label}</div>
-                  <div className="text-xs text-gray-500">{perspective.desc}</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Select headings 카드 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Settings className="h-5 w-5" />
-              <span>Select headings</span>
-            </CardTitle>
-            <CardDescription>콘텐츠의 구조를 결정할 헤딩 수를 선택하세요</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {HEADING_COUNTS.map((count) => (
-                <label
-                  key={count.value}
-                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
-                    formData.heading_count === count.value
-                      ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="heading_count"
-                    value={count.value}
-                    checked={formData.heading_count === count.value}
-                    onChange={() => handleInputChange('heading_count', count.value)}
-                    className="sr-only"
-                  />
-                  <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
-                    formData.heading_count === count.value ? 'border-blue-500' : 'border-gray-300'
-                  }`}>
-                    {formData.heading_count === count.value && (
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    )}
+          {/* Point of View 카드 */}
+          <Card className="flex-grow">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Eye className="h-5 w-5 text-indigo-600" />
+                <span>Point of view</span>
+              </CardTitle>
+              <CardDescription>Choose the narrative perspective for your article</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {PERSPECTIVES.map((perspective) => (
+                  <div
+                    key={perspective.value}
+                    className={`px-4 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                      formData.perspective === perspective.value
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
+                        : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                    }`}
+                    onClick={() => handleInputChange('perspective', perspective.value)}
+                  >
+                    <div className="font-semibold text-sm text-foreground">{perspective.label}</div>
+                    <div className="text-xs text-muted-foreground">{perspective.desc}</div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{count.label}</div>
-                    <div className="text-xs text-gray-500">{count.desc}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* 생성 버튼 */}
-        <Button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="w-full h-14 text-lg bg-blue-600 hover:bg-blue-700"
-          size="lg"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-6 w-6 mr-3 animate-spin" />
-              <span>생성 중...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-6 w-6 mr-3" />
-              <span>콘텐츠 생성</span>
-            </>
-          )}
-        </Button>
+          {/* Select headings 카드 */}
+          <Card className="flex-grow">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Settings className="h-5 w-5 text-teal-600" />
+                <span>Select headings</span>
+              </CardTitle>
+              <CardDescription>콘텐츠의 구조를 결정할 헤딩 수를 선택하세요</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {HEADING_COUNTS.map((count) => (
+                  <label
+                    key={count.value}
+                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                      formData.heading_count === count.value
+                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200 shadow-sm dark:border-muted-foreground dark:bg-muted dark:ring-muted-foreground/20'
+                        : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="heading_count"
+                      value={count.value}
+                      checked={formData.heading_count === count.value}
+                      onChange={() => handleInputChange('heading_count', count.value)}
+                      className="sr-only"
+                    />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
+                      formData.heading_count === count.value ? 'border-blue-500 dark:border-muted-foreground' : 'border-border'
+                    }`}>
+                      {formData.heading_count === count.value && (
+                        <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-muted-foreground"></div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-foreground">{count.label}</div>
+                      <div className="text-xs text-muted-foreground">{count.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
@@ -790,56 +835,100 @@ export default function MultiStepContentGenerator() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-full mx-auto">
-          <h1 className="text-3xl font-bold text-foreground mb-2">AI 콘텐츠 생성</h1>
-          <p className="text-muted-foreground">
-            SEO에 최적화된 고품질 콘텐츠를 한 번에 설정하고 생성해보세요
-          </p>
-        </div>
-      </div>
-
-      <div className="flex max-w-full mx-auto">
-        {/* 왼쪽 사이드바 - 입력 체크리스트 */}
-        <div className="w-80 bg-white border-r border-gray-200 p-6 min-h-screen">
-          <h3 className="text-lg font-semibold mb-4">입력 체크리스트</h3>
-          <div className="space-y-3">
+    <div className="min-h-screen bg-background flex">
+      {/* 왼쪽 사이드바 - 입력 체크리스트 */}
+      <div className={`w-80 bg-background fixed top-16 bottom-0 overflow-y-auto border-r border-border z-30 ${
+        sidebarOpen ? 'left-72' : 'left-20'
+      }`}>
+        <div className="pt-4 pb-6 px-4 h-full">
+          <h3 className="text-lg font-bold mb-4 text-foreground">입력 체크리스트</h3>
+          <div className="space-y-4">
             {[
-              { key: 'keyword', label: 'Topic 입력', completed: !!formData.keyword.trim() },
-              { key: 'target_country', label: 'Target Location', completed: !!formData.target_country },
-              { key: 'content_language', label: 'Article Language', completed: !!formData.content_language },
-              { key: 'primary_keyword', label: 'Primary Keyword', completed: !!formData.primary_keyword.trim() },
-              { key: 'content_type', label: 'Article Type', completed: !!formData.content_type },
-              { key: 'tone', label: 'Writing Style', completed: !!formData.tone },
-              { key: 'word_count', label: 'Article Length', completed: !!formData.word_count },
-              { key: 'perspective', label: 'Point of View', completed: !!formData.perspective },
-              { key: 'heading_count', label: 'Select Headings', completed: !!formData.heading_count }
+              { 
+                key: 'keyword', 
+                label: 'Topic 입력', 
+                completed: !!formData.keyword.trim(),
+                value: formData.keyword
+              },
+              { 
+                key: 'target_country', 
+                label: 'Target Location', 
+                completed: !!formData.target_country,
+                value: COUNTRIES.find(c => c.value === formData.target_country)?.label
+              },
+              { 
+                key: 'content_language', 
+                label: 'Article Language', 
+                completed: !!formData.content_language,
+                value: LANGUAGES.find(l => l.value === formData.content_language)?.label
+              },
+              { 
+                key: 'primary_keyword', 
+                label: 'Primary Keyword', 
+                completed: !!formData.primary_keyword.trim(),
+                value: formData.primary_keyword
+              },
+              { 
+                key: 'content_type', 
+                label: 'Article Type', 
+                completed: !!formData.content_type,
+                value: CONTENT_TYPES.find(t => t.value === formData.content_type)?.label
+              },
+              { 
+                key: 'tone', 
+                label: 'Writing Style', 
+                completed: !!formData.tone,
+                value: TONES.find(t => t.value === formData.tone)?.label
+              },
+              { 
+                key: 'word_count', 
+                label: 'Article Length', 
+                completed: !!formData.word_count,
+                value: WORD_COUNTS.find(w => w.value === formData.word_count)?.label
+              },
+              { 
+                key: 'perspective', 
+                label: 'Point of View', 
+                completed: !!formData.perspective,
+                value: PERSPECTIVES.find(p => p.value === formData.perspective)?.label
+              },
+              { 
+                key: 'heading_count', 
+                label: 'Select Headings', 
+                completed: !!formData.heading_count,
+                value: HEADING_COUNTS.find(h => h.value === formData.heading_count)?.label
+              }
             ].map((item) => (
-              <div key={item.key} className="flex items-center space-x-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  item.completed 
-                    ? 'bg-green-500 border-green-500 text-white' 
-                    : 'border-gray-300'
-                }`}>
-                  {item.completed && <CheckCircle className="h-3 w-3" />}
+              <div key={item.key} className="space-y-1">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    item.completed 
+                      ? 'bg-green-500 border-green-500 text-white' 
+                      : 'border-muted-foreground'
+                  }`}>
+                    {item.completed && <CheckCircle className="h-3 w-3" />}
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    item.completed ? 'text-green-600' : 'text-muted-foreground'
+                  }`}>
+                    {item.label}
+                  </span>
                 </div>
-                <span className={`text-sm ${
-                  item.completed ? 'text-green-600 font-medium' : 'text-gray-500'
-                }`}>
-                  {item.label}
-                </span>
+                {item.completed && item.value && (
+                  <div className="ml-8 text-xs text-muted-foreground">
+                    {item.value}
+                  </div>
+                )}
               </div>
             ))}
           </div>
           
           {/* 완료도 표시 */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600 mb-2">완료도</div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="mt-4 pt-3">
+            <div className="text-sm font-medium text-foreground mb-2">완료도</div>
+            <div className="w-full bg-muted rounded-full h-1.5">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                className="bg-primary h-1.5 rounded-full transition-all duration-300" 
                 style={{ 
                   width: `${Math.round(([
                     !!formData.keyword.trim(),
@@ -855,7 +944,7 @@ export default function MultiStepContentGenerator() {
                 }}
               ></div>
             </div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-muted-foreground mt-1 text-center">
               {[
                 !!formData.keyword.trim(),
                 !!formData.target_country,
@@ -866,13 +955,17 @@ export default function MultiStepContentGenerator() {
                 !!formData.word_count,
                 !!formData.perspective,
                 !!formData.heading_count
-              ].filter(Boolean).length}/9 항목 완료
+              ].filter(Boolean).length}/9 완료
             </div>
           </div>
         </div>
+      </div>
 
-        {/* 오른쪽 메인 콘텐츠 */}
-        <div className="flex-1 p-6">
+      {/* 메인 콘텐츠 영역 */}
+      <div className={`flex-1 min-h-screen ${
+        sidebarOpen ? 'ml-[24rem]' : 'ml-[24rem]'
+      }`}>
+        <div className="p-8">
           {/* Error Message */}
           {error && (
             <Alert variant="destructive" className="mb-6">
@@ -889,6 +982,29 @@ export default function MultiStepContentGenerator() {
 
           {/* Unified Form */}
           {!isGenerating && generationStep <= GENERATION_STEPS.length && renderUnifiedForm()}
+
+          {/* 페이지 하단 게시물 생성 버튼 */}
+          {!isGenerating && generationStep <= GENERATION_STEPS.length && (
+            <div className="mt-16 mb-12 flex justify-end">
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="w-40 h-10 bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-700 hover:to-slate-900 dark:from-slate-200 dark:to-slate-400 dark:hover:from-slate-300 dark:hover:to-slate-500 dark:text-slate-900 font-semibold shadow-lg hover:shadow-xl transition-all rounded-lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <span>생성 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    <span>게시물 생성</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
