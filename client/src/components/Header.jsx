@@ -30,7 +30,7 @@ export default function Header({ onMenuClick }) {
   const { apiConnected } = useContext(ApiStatusContext)
 
   return (
-    <header className="h-16 bg-background border-b border-border px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-16 bg-background border-b border-border pl-6 pr-6 lg:pl-16 flex items-center justify-between sticky top-0 z-30">
       {/* 왼쪽: 메뉴 버튼 (모바일) */}
       <div className="flex items-center">
         <Button

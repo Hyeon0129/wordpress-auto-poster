@@ -333,8 +333,6 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
     }
   }
 
-
-
   const renderProgressSection = () => {
     if (!isGenerating && generationStep === 0) return null
 
@@ -408,192 +406,247 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
   }
 
   const renderUnifiedForm = () => (
-    <div className="flex h-full">
-      {/* 좌측 컬럼 */}
-      <div className="flex-1 pr-4">
-        <div className="space-y-6 h-full flex flex-col">
-          {/* 기본 정보 카드 */}
-          <Card className="flex-grow">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-lg">
-                <Target className="h-5 w-5 text-blue-600" />
-                <span>기본 정보</span>
-              </CardTitle>
-              <CardDescription>콘텐츠의 핵심 정보를 입력하세요</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Topic */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">Topic</Label>
-                <Input
-                  placeholder="예: tensorflow 설치"
-                  value={formData.keyword}
-                  onChange={(e) => handleInputChange('keyword', e.target.value)}
-                  className="h-11 border-border focus:border-primary focus:ring-primary"
-                />
-              </div>
+    <div className="w-full px-8">
+      {/* Start Your Article: Choose Your Topic */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-2">Start Your Article: Choose Your Topic</h2>
+        <p className="text-sm text-muted-foreground mb-6">Define the key elements to tailor your content for targeted impact.</p>
+        
+        {/* Topic */}
+        <div className="mb-6">
+          <Label className="text-sm font-medium text-foreground mb-2 block">Topic</Label>
+          <Input
+            placeholder="Enter your topic here..."
+            value={formData.keyword}
+            onChange={(e) => handleInputChange('keyword', e.target.value)}
+            className="w-full"
+          />
+        </div>
 
-              {/* Target Location & Language */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-foreground">Target Location</Label>
-                  <Select value={formData.target_country} onValueChange={(value) => handleInputChange('target_country', value)}>
-                    <SelectTrigger className="h-11 border-border focus:border-primary">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COUNTRIES.map((country) => (
-                        <SelectItem key={country.value} value={country.value}>
-                          {country.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Suggested Topics */}
+        <div className="mb-6">
+          <Label className="text-sm text-muted-foreground mb-2 block">Suggested Topics</Label>
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible을 활용한 클라우드 자동화')}>ansible을 활용한 클라우드 자동화</span>
+            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible 플레이북 작성하기')}>ansible 플레이북 작성하기</span>
+            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible과 CI/CD 통합 가이드')}>ansible과 CI/CD 통합 가이드</span>
+            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible로 서버관리 DevOps 적용')}>ansible로 서버관리 DevOps 적용</span>
+          </div>
+        </div>
+
+        {/* Target Audience Location & Article Language */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div>
+            <Label className="text-sm font-medium text-foreground mb-2 block">Target Audience Location</Label>
+            <Select value={formData.target_country} onValueChange={(value) => handleInputChange('target_country', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRIES.map((country) => (
+                  <SelectItem key={country.value} value={country.value}>
+                    {country.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-sm font-medium text-foreground mb-2 block">Article Language</Label>
+            <Select value={formData.content_language} onValueChange={(value) => handleInputChange('content_language', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((language) => (
+                  <SelectItem key={language.value} value={language.value}>
+                    {language.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Primary Keyword & Title */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div>
+            <Label className="text-sm font-medium text-foreground mb-2 block">Primary Keyword</Label>
+            <Input
+              placeholder="Enter your primary keyword"
+              value={formData.primary_keyword}
+              onChange={(e) => handleInputChange('primary_keyword', e.target.value)}
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-sm font-medium text-foreground">Article Title (Optional)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSuggestTitle}
+                disabled={isGeneratingTitle}
+                className="h-7 px-3 text-xs"
+              >
+                {isGeneratingTitle ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Suggest Title
+                  </>
+                )}
+              </Button>
+            </div>
+            <Input
+              placeholder="Enter a custom title if desired"
+              value={formData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Article Type */}
+        <div className="mb-6">
+          <Label className="text-sm font-medium text-foreground mb-3 block">Article Type</Label>
+          <div className="grid grid-cols-3 gap-3">
+            {CONTENT_TYPES.map((type) => {
+              const TypeIcon = type.icon
+              return (
+                <div
+                  key={type.value}
+                  className={`flex flex-col items-center space-y-2 p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
+                    formData.content_type === type.value
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
+                      : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                  }`}
+                  onClick={() => handleInputChange('content_type', type.value)}
+                >
+                  <TypeIcon className="h-6 w-6" />
+                  <span className="font-medium text-sm">{type.label}</span>
                 </div>
+              )
+            })}
+          </div>
+        </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-foreground">Language</Label>
-                  <Select value={formData.content_language} onValueChange={(value) => handleInputChange('content_language', value)}>
-                    <SelectTrigger className="h-11 border-border focus:border-primary">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LANGUAGES.map((language) => (
-                        <SelectItem key={language.value} value={language.value}>
-                          {language.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Writing Style */}
+        <div className="mb-6">
+          <Label className="text-sm font-medium text-foreground mb-3 block">Writing Style</Label>
+          <div className="grid grid-cols-3 gap-3">
+            {TONES.map((tone) => (
+              <div
+                key={tone.value}
+                className={`px-4 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
+                  formData.tone === tone.value
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
+                    : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                }`}
+                onClick={() => handleInputChange('tone', tone.value)}
+              >
+                <div className="font-medium text-sm">{tone.label}</div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              {/* Primary Keyword */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">Primary Keyword</Label>
-                <Input
-                  placeholder="SEO 최적화의 핵심이 될 주요 키워드"
-                  value={formData.primary_keyword}
-                  onChange={(e) => handleInputChange('primary_keyword', e.target.value)}
-                  className="h-11 border-border focus:border-primary focus:ring-primary"
-                />
-              </div>
-
-              {/* 콘텐츠 제목 */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold text-foreground">콘텐츠 제목 (선택사항)</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSuggestTitle}
-                    disabled={isGeneratingTitle}
-                    className="h-7 px-3 text-xs border-border hover:bg-muted"
-                  >
-                    {isGeneratingTitle ? (
-                      <>
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                        생성중...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        제목추천
-                      </>
+        {/* Article Structure & Secondary Keywords */}
+        <div className="grid grid-cols-2 gap-8 mb-6">
+          {/* Article Structure */}
+          <div>
+            <Label className="text-sm font-medium text-foreground mb-3 block">Article Length</Label>
+            <div className="space-y-3">
+              {WORD_COUNTS.map((count) => (
+                <label
+                  key={count.value}
+                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                    formData.word_count === count.value
+                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
+                      : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="word_count"
+                    value={count.value}
+                    checked={formData.word_count === count.value}
+                    onChange={(e) => handleInputChange('word_count', e.target.value)}
+                    className="sr-only"
+                  />
+                  <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
+                    formData.word_count === count.value ? 'border-blue-500 dark:border-muted-foreground' : 'border-border'
+                  }`}>
+                    {formData.word_count === count.value && (
+                      <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-muted-foreground"></div>
                     )}
-                  </Button>
-                </div>
-                <Input
-                  placeholder="원하는 제목이 있다면 입력하세요"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="h-11 border-border focus:border-primary focus:ring-primary"
-                />
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm text-foreground">{count.label}</div>
+                    <div className="text-xs text-muted-foreground">{count.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
 
-          {/* 콘텐츠 유형 & 스타일 카드 */}
-          <Card className="flex-grow">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-lg">
-                <Palette className="h-5 w-5 text-purple-600" />
-                <span>콘텐츠 유형 & 스타일</span>
-              </CardTitle>
-              <CardDescription>콘텐츠의 유형과 스타일을 선택하세요</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Article Type */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-foreground">Article Type</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {CONTENT_TYPES.map((type) => {
-                    const TypeIcon = type.icon
-                    return (
-                      <div
-                        key={type.value}
-                        className={`flex items-center space-x-2 px-3 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                          formData.content_type === type.value
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
-                            : 'border-border hover:border-muted-foreground hover:bg-muted/50'
-                        }`}
-                        onClick={() => handleInputChange('content_type', type.value)}
-                      >
-                        <TypeIcon className="h-4 w-4" />
-                        <span className="font-medium text-sm">{type.label}</span>
-                      </div>
-                    )
-                  })}
-                </div>
+            {/* Point of View & Headings */}
+            <div className="mt-6 space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-2 block">Point of View</Label>
+                <Select value={formData.perspective} onValueChange={(value) => handleInputChange('perspective', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select perspective" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PERSPECTIVES.map((perspective) => (
+                      <SelectItem key={perspective.value} value={perspective.value}>
+                        {perspective.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Writing Style */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-foreground">Writing Style</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {TONES.map((tone) => (
-                    <div
-                      key={tone.value}
-                      className={`px-3 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
-                        formData.tone === tone.value
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
-                          : 'border-border hover:border-muted-foreground hover:bg-muted/50'
-                      }`}
-                      onClick={() => handleInputChange('tone', tone.value)}
-                    >
-                      <div className="font-medium text-sm">{tone.label}</div>
-                    </div>
-                  ))}
-                </div>
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-2 block">Number of Headings</Label>
+                <Select value={formData.heading_count} onValueChange={(value) => handleInputChange('heading_count', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select headings" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HEADING_COUNTS.map((count) => (
+                      <SelectItem key={count.value} value={count.value}>
+                        {count.label} - {count.desc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Secondary Keywords 카드 */}
-          <Card className="flex-grow">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-lg">
-                <Hash className="h-5 w-5 text-green-600" />
-                <span>Secondary Keywords</span>
-              </CardTitle>
-              <CardDescription>콘텐츠에 포함될 보조 키워드들을 추가하세요 (최대 5개)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          {/* Secondary Keywords */}
+          <div>
+            <Label className="text-sm font-medium text-foreground mb-3 block">Secondary Keywords</Label>
+            <div className="space-y-4">
               <div className="flex space-x-2">
                 <Input
-                  placeholder="보조 키워드 입력 후 Enter"
+                  placeholder="Enter secondary keyword and press Enter"
                   value={secondaryKeywordInput}
                   onChange={(e) => setSecondaryKeywordInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && addSecondaryKeyword()}
-                  className="flex-1 h-11 border-border focus:border-primary focus:ring-primary"
+                  className="flex-1"
                 />
                 <Button 
                   onClick={addSecondaryKeyword}
                   disabled={formData.secondary_keywords.length >= 5 || !secondaryKeywordInput.trim()}
-                  className="h-11 px-4 bg-primary hover:bg-primary/90"
                 >
-                  추가
+                  Add
                 </Button>
               </div>
               
@@ -615,134 +668,10 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
               )}
               
               <div className="text-sm text-gray-500">
-                {formData.secondary_keywords.length}/5 키워드 사용 중
+                {formData.secondary_keywords.length}/5 keywords used
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* 우측 컬럼 */}
-      <div className="flex-1 pl-4">
-        <div className="space-y-6 h-full flex flex-col">
-          {/* Article Structure 카드 */}
-          <Card className="flex-grow">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-lg">
-                <FileText className="h-5 w-5 text-orange-600" />
-                <span>Article Structure and Length</span>
-              </CardTitle>
-              <CardDescription>Choose the best format for your content goals.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {WORD_COUNTS.map((count) => (
-                  <label
-                    key={count.value}
-                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                      formData.word_count === count.value
-                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200 shadow-sm dark:border-muted-foreground dark:bg-muted dark:ring-muted-foreground/20'
-                        : 'border-border hover:border-muted-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="word_count"
-                      value={count.value}
-                      checked={formData.word_count === count.value}
-                      onChange={() => handleInputChange('word_count', count.value)}
-                      className="sr-only"
-                    />
-                    <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
-                      formData.word_count === count.value ? 'border-blue-500 dark:border-muted-foreground' : 'border-border'
-                    }`}>
-                      {formData.word_count === count.value && (
-                        <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-muted-foreground"></div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-foreground">{count.label}</div>
-                      <div className="text-xs text-muted-foreground">{count.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Point of View 카드 */}
-          <Card className="flex-grow">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-lg">
-                <Eye className="h-5 w-5 text-indigo-600" />
-                <span>Point of view</span>
-              </CardTitle>
-              <CardDescription>Choose the narrative perspective for your article</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {PERSPECTIVES.map((perspective) => (
-                  <div
-                    key={perspective.value}
-                    className={`px-4 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                      formData.perspective === perspective.value
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
-                        : 'border-border hover:border-muted-foreground hover:bg-muted/50'
-                    }`}
-                    onClick={() => handleInputChange('perspective', perspective.value)}
-                  >
-                    <div className="font-semibold text-sm text-foreground">{perspective.label}</div>
-                    <div className="text-xs text-muted-foreground">{perspective.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Select headings 카드 */}
-          <Card className="flex-grow">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-lg">
-                <Settings className="h-5 w-5 text-teal-600" />
-                <span>Select headings</span>
-              </CardTitle>
-              <CardDescription>콘텐츠의 구조를 결정할 헤딩 수를 선택하세요</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {HEADING_COUNTS.map((count) => (
-                  <label
-                    key={count.value}
-                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                      formData.heading_count === count.value
-                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200 shadow-sm dark:border-muted-foreground dark:bg-muted dark:ring-muted-foreground/20'
-                        : 'border-border hover:border-muted-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="heading_count"
-                      value={count.value}
-                      checked={formData.heading_count === count.value}
-                      onChange={() => handleInputChange('heading_count', count.value)}
-                      className="sr-only"
-                    />
-                    <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
-                      formData.heading_count === count.value ? 'border-blue-500 dark:border-muted-foreground' : 'border-border'
-                    }`}>
-                      {formData.heading_count === count.value && (
-                        <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-muted-foreground"></div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-foreground">{count.label}</div>
-                      <div className="text-xs text-muted-foreground">{count.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -841,124 +770,40 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
         sidebarOpen ? 'left-64' : 'left-16'
       }`}>
                   <div className="pt-8 pb-6 px-6 h-full flex flex-col">
-          <h3 className="text-lg font-bold mb-6 text-foreground text-center">입력 체크리스트</h3>
-          <div className="space-y-4 w-full max-w-xs">
-            {[
-              { 
-                key: 'keyword', 
-                label: 'Topic 입력', 
-                completed: !!formData.keyword.trim(),
-                value: formData.keyword
-              },
-              { 
-                key: 'target_country', 
-                label: 'Target Location', 
-                completed: !!formData.target_country,
-                value: COUNTRIES.find(c => c.value === formData.target_country)?.label
-              },
-              { 
-                key: 'content_language', 
-                label: 'Article Language', 
-                completed: !!formData.content_language,
-                value: LANGUAGES.find(l => l.value === formData.content_language)?.label
-              },
-              { 
-                key: 'primary_keyword', 
-                label: 'Primary Keyword', 
-                completed: !!formData.primary_keyword.trim(),
-                value: formData.primary_keyword
-              },
-              { 
-                key: 'content_type', 
-                label: 'Article Type', 
-                completed: !!formData.content_type,
-                value: CONTENT_TYPES.find(t => t.value === formData.content_type)?.label
-              },
-              { 
-                key: 'tone', 
-                label: 'Writing Style', 
-                completed: !!formData.tone,
-                value: TONES.find(t => t.value === formData.tone)?.label
-              },
-              { 
-                key: 'word_count', 
-                label: 'Article Length', 
-                completed: !!formData.word_count,
-                value: WORD_COUNTS.find(w => w.value === formData.word_count)?.label
-              },
-              { 
-                key: 'perspective', 
-                label: 'Point of View', 
-                completed: !!formData.perspective,
-                value: PERSPECTIVES.find(p => p.value === formData.perspective)?.label
-              },
-              { 
-                key: 'heading_count', 
-                label: 'Select Headings', 
-                completed: !!formData.heading_count,
-                value: HEADING_COUNTS.find(h => h.value === formData.heading_count)?.label
-              }
-            ].map((item) => (
-              <div key={item.key} className="space-y-1 w-full">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    item.completed 
-                      ? 'bg-green-500 border-green-500 text-white' 
-                      : 'border-muted-foreground'
-                  }`}>
-                    {item.completed && <CheckCircle className="h-3 w-3" />}
-                  </div>
-                  <span className={`text-sm font-medium ${
-                    item.completed ? 'text-green-600' : 'text-muted-foreground'
-                  }`}>
-                    {item.label}
-                  </span>
-                </div>
-                {item.completed && item.value && (
-                  <div className="text-xs text-muted-foreground text-center">
-                    {item.value}
-                  </div>
-                )}
-              </div>
-            ))}
+           <div className="mb-6">
+             <h3 className="text-lg font-bold text-foreground mb-2">10-Step Article</h3>
+             <p className="text-sm text-muted-foreground">Change</p>
+           </div>
+           <div className="space-y-4 w-full max-w-xs">
+             {[
+               { step: 1, label: 'Enter a Topic', completed: !!formData.keyword.trim() },
+               { step: 2, label: 'Target Location', completed: !!formData.target_country },
+               { step: 3, label: 'Article Language', completed: !!formData.content_language },
+               { step: 4, label: 'Primary Keyword', completed: !!formData.primary_keyword.trim() },
+               { step: 5, label: 'Article Type', completed: !!formData.content_type },
+               { step: 6, label: 'Writing Style', completed: !!formData.tone },
+               { step: 7, label: 'Article Length', completed: !!formData.word_count },
+               { step: 8, label: 'Point of View', completed: !!formData.perspective },
+               { step: 9, label: 'Number of Headings', completed: !!formData.heading_count },
+               { step: 10, label: 'Secondary Keywords', completed: formData.secondary_keywords.length > 0 }
+             ].map((item) => (
+               <div key={item.step} className="flex items-center space-x-3 py-1">
+                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                   item.completed 
+                     ? 'bg-primary text-primary-foreground' 
+                     : 'bg-muted text-muted-foreground'
+                 }`}>
+                   {item.step}
+                 </div>
+                 <span className={`text-sm ${
+                   item.completed ? 'text-foreground font-medium' : 'text-muted-foreground'
+                 }`}>
+                   {item.label}
+                 </span>
+               </div>
+             ))}
+           </div>
           </div>
-          
-          {/* 완료도 표시 */}
-          <div className="mt-4 pt-3 w-full max-w-xs">
-            <div className="text-sm font-medium text-foreground mb-2 text-center">완료도</div>
-            <div className="w-full bg-muted rounded-full h-1.5">
-              <div 
-                className="bg-primary h-1.5 rounded-full transition-all duration-300" 
-                style={{ 
-                  width: `${Math.round(([
-                    !!formData.keyword.trim(),
-                    !!formData.target_country,
-                    !!formData.content_language,
-                    !!formData.primary_keyword.trim(),
-                    !!formData.content_type,
-                    !!formData.tone,
-                    !!formData.word_count,
-                    !!formData.perspective,
-                    !!formData.heading_count
-                  ].filter(Boolean).length / 9) * 100)}%` 
-                }}
-              ></div>
-            </div>
-            <div className="text-xs text-muted-foreground mt-1 text-center">
-              {[
-                !!formData.keyword.trim(),
-                !!formData.target_country,
-                !!formData.content_language,
-                !!formData.primary_keyword.trim(),
-                !!formData.content_type,
-                !!formData.tone,
-                !!formData.word_count,
-                !!formData.perspective,
-                !!formData.heading_count
-              ].filter(Boolean).length}/9 완료
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* 메인 콘텐츠 영역 */}

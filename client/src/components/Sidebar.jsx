@@ -61,14 +61,14 @@ export default function Sidebar({ isOpen, onToggle }) {
   return (
     <>
       {/* 사이드바 */}
-      <div className={`fixed left-0 top-0 h-full bg-background transition-all duration-300 z-20 ${
+      <div className={`fixed left-0 top-0 h-full bg-background transition-[width] duration-300 ease-in-out z-20 ${
         isOpen ? 'w-64' : 'w-16'
       }`}>
-        {/* 세로 구분선: 헤더 아래부터 표시 */}
-        <div className="absolute top-16 right-0 bottom-0 w-px bg-border" />
+        {/* 세로 구분선: 헤더 끝까지 표시 */}
+        <div className="absolute top-0 right-0 bottom-0 w-px bg-border" />
         <div className="flex flex-col h-full">
           {/* 헤더 */}
-          <div className="p-4 border-b border-border">
+          <div className="p-4">
             <div className="flex items-center justify-between">
               {isOpen && (
                 <div className="flex items-center space-x-2">
@@ -93,16 +93,16 @@ export default function Sidebar({ isOpen, onToggle }) {
 
           {/* 메뉴 항목 */}
           <nav className="flex-1 p-4">
-            <ul className="space-y-2">
+            <ul className="space-y-2 border-0">
               {menuItems.map((item) => {
                 const Icon = item.icon
                 const isActive = location.pathname === item.path
                 
                 return (
-                  <li key={item.path}>
+                  <li key={item.path} className="border-0">
                     <Link
                       to={item.path}
-                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors border-0 ${
                         isActive 
                           ? 'bg-primary text-primary-foreground' 
                           : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -119,7 +119,7 @@ export default function Sidebar({ isOpen, onToggle }) {
 
           {/* 이번 달 사용량 */}
           {isOpen && (
-            <div className="p-4 border-t border-border">
+            <div className="p-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">이번 달 사용량</span>
