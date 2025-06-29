@@ -837,12 +837,12 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* 왼쪽 사이드바 - 입력 체크리스트 */}
-      <div className={`w-80 bg-background fixed top-16 bottom-0 overflow-y-auto border-r border-border z-30 ${
-        sidebarOpen ? 'left-72' : 'left-20'
+      <div className={`w-80 bg-background fixed top-16 bottom-0 overflow-y-auto border-r border-border z-30 transition-[left] duration-300 ease-out ${
+        sidebarOpen ? 'left-64' : 'left-16'
       }`}>
-        <div className="pt-4 pb-6 px-4 h-full">
-          <h3 className="text-lg font-bold mb-4 text-foreground">입력 체크리스트</h3>
-          <div className="space-y-4">
+                  <div className="pt-8 pb-6 px-6 h-full flex flex-col">
+          <h3 className="text-lg font-bold mb-6 text-foreground text-center">입력 체크리스트</h3>
+          <div className="space-y-4 w-full max-w-xs">
             {[
               { 
                 key: 'keyword', 
@@ -899,7 +899,7 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
                 value: HEADING_COUNTS.find(h => h.value === formData.heading_count)?.label
               }
             ].map((item) => (
-              <div key={item.key} className="space-y-1">
+              <div key={item.key} className="space-y-1 w-full">
                 <div className="flex items-center space-x-3">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                     item.completed 
@@ -915,7 +915,7 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
                   </span>
                 </div>
                 {item.completed && item.value && (
-                  <div className="ml-8 text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground text-center">
                     {item.value}
                   </div>
                 )}
@@ -924,8 +924,8 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
           </div>
           
           {/* 완료도 표시 */}
-          <div className="mt-4 pt-3">
-            <div className="text-sm font-medium text-foreground mb-2">완료도</div>
+          <div className="mt-4 pt-3 w-full max-w-xs">
+            <div className="text-sm font-medium text-foreground mb-2 text-center">완료도</div>
             <div className="w-full bg-muted rounded-full h-1.5">
               <div 
                 className="bg-primary h-1.5 rounded-full transition-all duration-300" 
@@ -962,7 +962,7 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
       </div>
 
       {/* 메인 콘텐츠 영역 */}
-      <div className={`flex-1 min-h-screen ${
+      <div className={`flex-1 min-h-screen transition-[margin] duration-300 ease-out ${
         sidebarOpen ? 'ml-[24rem]' : 'ml-[24rem]'
       }`}>
         <div className="p-8">

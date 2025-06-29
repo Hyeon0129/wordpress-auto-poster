@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -61,9 +62,9 @@ export default function ProfileModal({ isOpen, onClose }) {
     { id: 'language', label: '언어', icon: Languages }
   ]
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-background rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-60 p-4">
+      <div className="bg-white dark:bg-background rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-border">
         <div className="flex h-full">
           {/* 사이드바 */}
           <div className="w-64 bg-muted/30 border-r border-border p-6">
@@ -367,6 +368,6 @@ export default function ProfileModal({ isOpen, onClose }) {
         </div>
       </div>
     </div>
-  )
+  , document.body)
 }
 

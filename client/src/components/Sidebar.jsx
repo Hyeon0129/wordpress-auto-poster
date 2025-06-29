@@ -1,8 +1,7 @@
-import { useState, useContext } from 'react'
+import { useContext } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { 
   LayoutDashboard, 
   PenTool, 
@@ -11,16 +10,8 @@ import {
   History, 
   Settings, 
   ChevronLeft,
-  ChevronRight,
-  Moon,
-  Sun,
-  LogOut,
-  User,
-  Zap
+  ChevronRight
 } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
-import { useTheme } from '../contexts/ThemeContext'
-import ProfileModal from './ProfileModal'
 import { ApiStatusContext } from '../contexts/ApiStatusContext'
 
 const menuItems = [
@@ -58,10 +49,6 @@ const menuItems = [
 
 export default function Sidebar({ isOpen, onToggle }) {
   const location = useLocation()
-  const { user, logout } = useAuth()
-  const { theme, toggleTheme } = useTheme()
-  const [showProfile, setShowProfile] = useState(false)
-  const [showProfileModal, setShowProfileModal] = useState(false)
   const { apiConnected } = useContext(ApiStatusContext)
 
   // 이번 달 사용량 (데모용)
@@ -74,9 +61,11 @@ export default function Sidebar({ isOpen, onToggle }) {
   return (
     <>
       {/* 사이드바 */}
-      <div className={`fixed left-0 top-0 h-full bg-background border-r border-border transition-all duration-300 z-50 ${
+      <div className={`fixed left-0 top-0 h-full bg-background transition-all duration-300 z-20 ${
         isOpen ? 'w-64' : 'w-16'
       }`}>
+        {/* 세로 구분선: 헤더 아래부터 표시 */}
+        <div className="absolute top-16 right-0 bottom-0 w-px bg-border" />
         <div className="flex flex-col h-full">
           {/* 헤더 */}
           <div className="p-4 border-b border-border">
@@ -99,6 +88,8 @@ export default function Sidebar({ isOpen, onToggle }) {
               </Button>
             </div>
           </div>
+
+
 
           {/* 메뉴 항목 */}
           <nav className="flex-1 p-4">
@@ -149,72 +140,7 @@ export default function Sidebar({ isOpen, onToggle }) {
             </div>
           )}
 
-          {/* 하단 영역 */}
-          <div className="p-4 border-t border-border space-y-3">
-            {/* 다크모드 토글 */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className={`w-full ${isOpen ? 'justify-start' : 'justify-center'}`}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              {isOpen && <span className="ml-2">다크모드</span>}
-            </Button>
 
-            {/* 사용자 프로필 */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowProfile(!showProfile)}
-                className={`w-full ${isOpen ? 'justify-start' : 'justify-center'} p-2`}
-              >
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={user?.avatar} />
-                  <AvatarFallback>
-                    {user?.username?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                {isOpen && (
-                  <div className="ml-2 text-left flex-1">
-                    <div className="text-sm font-medium">{user?.username || '사용자'}</div>
-                    <div className="text-xs text-muted-foreground">{user?.email || 'user@example.com'}</div>
-                  </div>
-                )}
-              </Button>
-
-              {/* 프로필 드롭다운 */}
-              {showProfile && isOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-background border border-border rounded-lg shadow-lg p-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setShowProfile(false)
-                      setShowProfileModal(true)
-                    }}
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    프로필 설정
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      setShowProfile(false)
-                      logout()
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    로그아웃
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -226,11 +152,7 @@ export default function Sidebar({ isOpen, onToggle }) {
         />
       )}
 
-      {/* 프로필 설정 모달 */}
-      <ProfileModal 
-        isOpen={showProfileModal} 
-        onClose={() => setShowProfileModal(false)} 
-      />
+
     </>
   )
 }
