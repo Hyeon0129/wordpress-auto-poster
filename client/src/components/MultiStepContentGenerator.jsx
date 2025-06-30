@@ -27,30 +27,38 @@ import {
   Sparkles,
   Eye,
   BarChart3,
-  X
+  X,
+  Search,
+  Database
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const GENERATION_STEPS = [
-  { id: 1, name: '키워드 분석', description: 'SEO 키워드 분석 중...', icon: Target },
-  { id: 2, name: 'AI 설정', description: 'AI 모델 설정 중...', icon: Settings },
-  { id: 3, name: '콘텐츠 생성', description: 'AI가 콘텐츠를 생성 중...', icon: Sparkles },
-  { id: 4, name: 'SEO 최적화', description: 'SEO 최적화 적용 중...', icon: BarChart3 },
-  { id: 5, name: '완료 처리', description: '최종 검토 및 완료...', icon: CheckCircle }
+  { id: 1, name: 'Topic Analysis', icon: Target },
+  { id: 2, name: 'AI Research', icon: Search },
+  { id: 3, name: 'Content Writing', icon: Sparkles },
+  { id: 4, name: 'SEO Optimization', icon: BarChart3 },
+  { id: 5, name: 'Final Review', icon: CheckCircle }
 ]
 
 const COUNTRIES = [
-  { value: 'KR', label: '대한민국' },
-  { value: 'US', label: '미국' },
-  { value: 'JP', label: '일본' },
-  { value: 'CN', label: '중국' },
-  { value: 'GB', label: '영국' },
-  { value: 'DE', label: '독일' },
-  { value: 'FR', label: '프랑스' },
-  { value: 'CA', label: '캐나다' },
-  { value: 'AU', label: '호주' },
+  { value: 'AF', label: 'Afghanistan', flag: '🇦🇫' },
+  { value: 'AL', label: 'Albania', flag: '🇦🇱' },
+  { value: 'DZ', label: 'Algeria', flag: '🇩🇿' },
+  { value: 'AS', label: 'American Samoa', flag: '🇦🇸' },
+  { value: 'AD', label: 'Andorra', flag: '🇦🇩' },
+  { value: 'AO', label: 'Angola', flag: '🇦🇴' },
+  { value: 'AU', label: 'Australia', flag: '🇦🇺' },
+  { value: 'CA', label: 'Canada', flag: '🇨🇦' },
+  { value: 'CN', label: 'China', flag: '🇨🇳' },
+  { value: 'FR', label: 'France', flag: '🇫🇷' },
+  { value: 'DE', label: 'Germany', flag: '🇩🇪' },
+  { value: 'JP', label: 'Japan', flag: '🇯🇵' },
+  { value: 'KR', label: 'South Korea', flag: '🇰🇷' },
+  { value: 'GB', label: 'United Kingdom', flag: '🇬🇧' },
+  { value: 'US', label: 'United States', flag: '🇺🇸' },
 ]
 
 const LANGUAGES = [
@@ -63,89 +71,47 @@ const LANGUAGES = [
   { value: 'de', label: 'Deutsch' },
 ]
 
-const CONTENT_TYPES = [
-  { value: 'blog_post', label: '블로그 글', icon: FileText },
-  { value: 'guide', label: '가이드', icon: Eye },
-  { value: 'review', label: '리뷰', icon: Target },
-  { value: 'comparison', label: '비교글', icon: BarChart3 },
-  { value: 'tutorial', label: '튜토리얼', icon: Settings },
-  { value: 'news', label: '뉴스', icon: Globe },
-]
-
-const TONES = [
-  { value: 'professional', label: '전문가형', desc: '전문적이고 신뢰할 수 있는 톤' },
-  { value: 'friendly', label: '친절한', desc: '따뜻하고 접근하기 쉬운 톤' },
-  { value: 'cheerful', label: '유쾌한', desc: '밝고 에너지 넘치는 톤' },
-  { value: 'casual', label: '캐주얼', desc: '편안하고 자연스러운 톤' },
-  { value: 'formal', label: '공식적', desc: '격식 있고 진중한 톤' },
-  { value: 'conversational', label: '대화형', desc: '친근하고 대화하는 듯한 톤' },
-]
-
-const WORD_COUNTS = [
-  { value: 500, label: '500 단어', desc: '짧은 글 (3-5분 읽기)' },
-  { value: 800, label: '800 단어', desc: '보통 글 (5-7분 읽기)' },
-  { value: 1000, label: '1,000 단어', desc: '중간 글 (7-10분 읽기)' },
-  { value: 2000, label: '2,000 단어', desc: '긴 글 (12-15분 읽기)' },
-]
-
-const HEADING_COUNTS = [
-  { value: 5, label: '5개 헤딩', desc: '간결한 구조' },
-  { value: 7, label: '7개 헤딩', desc: '균형잡힌 구조 (추천)' },
-  { value: 9, label: '9개 헤딩', desc: '상세한 구조' },
-]
-
-const PERSPECTIVES = [
-  { value: 'first_person', label: '1인칭 (나, 우리)', desc: '개인적이고 친근한 관점' },
-  { value: 'third_person', label: '3인칭 (그들, 사용자들)', desc: '객관적이고 전문적인 관점' },
-  { value: 'mixed', label: '혼합', desc: '상황에 따라 적절히 사용' },
+const ARTICLE_TYPES = [
+  { id: 'ai-recommended', label: 'AI Recommended', icon: Sparkles },
+  { id: 'news-articles', label: 'News Articles', icon: Globe },
+  { id: 'blog-posts', label: 'Blog Posts', icon: FileText },
+  { id: 'how-to-guides', label: 'How-To Guides', icon: Eye },
+  { id: 'listicles', label: 'Listicles', icon: Hash },
+  { id: 'comparison-blogs', label: 'Comparison Blogs', icon: BarChart3 },
+  { id: 'technical-articles', label: 'Technical Articles', icon: Settings },
+  { id: 'product-reviews', label: 'Product Reviews', icon: Target },
+  { id: 'glossary-pages', label: 'Glossary Pages', icon: Type }
 ]
 
 export default function MultiStepContentGenerator({ sidebarOpen = true }) {
   const { token } = useAuth()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationProgress, setGenerationProgress] = useState(0)
-  const [generationStep, setGenerationStep] = useState(0)
+  const [currentStep, setCurrentStep] = useState(0)
   const [generatedContent, setGeneratedContent] = useState(null)
   const [error, setError] = useState('')
   const [wpSites, setWpSites] = useState([])
   
-  // 폼 데이터 상태
   const [formData, setFormData] = useState({
-    // Page 1: 콘텐츠 기획 정보
-    keyword: '',
-    target_country: 'KR',
-    content_language: 'ko',
-    title: '',
-    tone: '',
-    content_type: '',
-    word_count: 800,
-    
-    // Page 2: SEO 및 구성 정보
+    topic: '',
+    target_country: 'US',
+    article_language: 'en',
+    keywords: '',
+    article_type: 'ai-recommended',
+    research_method: 'ai-web-research',
     primary_keyword: '',
     secondary_keywords: [],
-    heading_count: 7,
-    perspective: 'third_person',
-    
-    // 추가 설정
-    include_images: true,
-    auto_post: false,
-    selected_site: '',
-    post_status: 'draft'
+    competitor_urls: []
   })
-
+  
   const [secondaryKeywordInput, setSecondaryKeywordInput] = useState('')
-  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false)
+  const [urlInput, setUrlInput] = useState('')
+  const [isAnalyzingUrl, setIsAnalyzingUrl] = useState(false)
+  const [topRankingArticles, setTopRankingArticles] = useState([])
 
   useEffect(() => {
     loadWordPressSites()
   }, [])
-
-  useEffect(() => {
-    // Page 1에서 키워드가 입력되면 Page 2의 primary_keyword에 자동 설정
-    if (formData.keyword && formData.keyword !== formData.primary_keyword) {
-      setFormData(prev => ({ ...prev, primary_keyword: formData.keyword }))
-    }
-  }, [formData.keyword])
 
   const loadWordPressSites = async () => {
     try {
@@ -163,6 +129,60 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const validateForm = () => {
+    if (!formData.topic.trim()) {
+      setError('Topic을 입력해주세요')
+      return false
+    }
+    return true
+  }
+
+  const simulateProgress = async () => {
+    setCurrentStep(0)
+    for (let i = 0; i <= 100; i += 10) {
+      setGenerationProgress(i)
+      if (i % 20 === 0 && i > 0) {
+        setCurrentStep(prev => Math.min(prev + 1, GENERATION_STEPS.length - 1))
+      }
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+  }
+
+  const handleGenerate = async () => {
+    if (!validateForm()) return
+
+    setError('')
+    setIsGenerating(true)
+    setCurrentStep(0)
+    setGenerationProgress(0)
+
+    try {
+      await simulateProgress()
+      
+      // 실제 API 호출
+      const response = await fetch(`${API_BASE_URL}/api/content/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (!response.ok) {
+        throw new Error('콘텐츠 생성에 실패했습니다')
+      }
+
+      const data = await response.json()
+      setGeneratedContent(data)
+    } catch (error) {
+      console.error('Generation error:', error)
+      setError(error.message || '콘텐츠 생성 중 오류가 발생했습니다')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const addSecondaryKeyword = () => {
@@ -183,508 +203,435 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
     }))
   }
 
-  const handleSuggestTitle = async () => {
-    // 필수 필드 검증
-    if (!formData.keyword.trim()) {
-      setError('Topic을 먼저 입력해주세요')
-      return
-    }
-    if (!formData.primary_keyword.trim()) {
-      setError('Primary Keyword를 먼저 입력해주세요')
-      return
-    }
-
-    setError('')
-    setIsGeneratingTitle(true)
+  const addCompetitorUrl = async () => {
+    if (!urlInput.trim() || formData.competitor_urls.length >= 5) return
     
+    setIsAnalyzingUrl(true)
     try {
-      // TODO: 나중에 백엔드 API 연결
-      // 임시로 시뮬레이션
+      // 실제로는 백엔드 API를 호출하여 URL을 분석
+      // 여기서는 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // 임시 제목 예시
-      const suggestedTitles = [
-        `${formData.primary_keyword} 완전 가이드: 초보자를 위한 단계별 설명`,
-        `${formData.primary_keyword}의 모든 것: 전문가가 알려주는 핵심 정보`,
-        `${formData.primary_keyword} 마스터하기: 실무에서 바로 활용하는 방법`
-      ]
-      
-      // 첫 번째 제목을 자동으로 설정 (실제로는 사용자가 선택할 수 있도록 모달 등을 구현할 수 있음)
-      setFormData(prev => ({ ...prev, title: suggestedTitles[0] }))
-      
-    } catch (error) {
-      setError('제목 추천 중 오류가 발생했습니다.')
-    } finally {
-      setIsGeneratingTitle(false)
-    }
-  }
-
-  const validateForm = () => {
-    const errors = []
-    let firstErrorField = null
-    if (!formData.keyword.trim()) {errors.push('핵심 키워드를 입력해주세요');firstErrorField='keyword'}
-    if (!formData.tone) {errors.push('톤 & 스타일을 선택해주세요');if(!firstErrorField)firstErrorField='tone'}
-    if (!formData.content_type) {errors.push('콘텐츠 유형을 선택해주세요');if(!firstErrorField)firstErrorField='content_type'}
-    if (!formData.primary_keyword.trim()) {errors.push('Primary Keyword를 입력해주세요');if(!firstErrorField)firstErrorField='primary_keyword'}
-    if (errors.length > 0) {
-      setError(errors.join(', '))
-      // 스크롤 이동
-      const el=document.getElementById(firstErrorField)
-      if(el){el.scrollIntoView({behavior:'smooth',block:'center'})}
-      return false
-    }
-    setError('')
-    return true
-  }
-
-  const simulateProgress = async () => {
-    for (let step = 1; step <= GENERATION_STEPS.length; step++) {
-      setGenerationStep(step)
-      
-      const stepProgress = ((step - 1) / GENERATION_STEPS.length) * 100
-      const stepDuration = step === 3 ? 3000 : 1500
-      
-      for (let i = 0; i <= 100; i += 10) {
-        const totalProgress = stepProgress + (i / GENERATION_STEPS.length)
-        setGenerationProgress(Math.min(totalProgress, 100))
-        await new Promise(resolve => setTimeout(resolve, stepDuration / 10))
+      const newUrl = {
+        url: urlInput.trim(),
+        title: 'Home - ' + urlInput.replace(/https?:\/\//, '').split('/')[0],
+        status: 'Added',
+        id: Date.now() // 고유 ID 추가
       }
-    }
-  }
-
-  const handleGenerate = async () => {
-    if (!validateForm()) return
-
-    setIsGenerating(true)
-    setError('')
-    setGenerationStep(0)
-    setGenerationProgress(0)
-    setGeneratedContent(null)
-
-    try {
-      const progressPromise = simulateProgress()
-
-      const response = await fetch(`${API_BASE_URL}/api/content/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-
-      const data = await response.json()
-      await progressPromise
-
-      if (data.success) {
-        setGeneratedContent(data.content)
-        setGenerationStep(GENERATION_STEPS.length + 1)
-        setGenerationProgress(100)
-      } else {
-        throw new Error(data.message || '콘텐츠 생성에 실패했습니다.')
-      }
+      
+      setFormData(prev => ({
+        ...prev,
+        competitor_urls: [...prev.competitor_urls, newUrl]
+      }))
+      
+      // Top Ranking Articles 시뮬레이션
+      setTopRankingArticles(prev => [
+        ...prev,
+        {
+          title: 'Home - ' + urlInput.replace(/https?:\/\//, '').split('/')[0],
+          url: urlInput.trim(),
+          selected: true,
+          id: Date.now()
+        }
+      ])
+      
+      setUrlInput('')
     } catch (error) {
-      setError(error.message)
-      setGenerationStep(0)
-      setGenerationProgress(0)
+      console.error('URL 분석 실패:', error)
     } finally {
-      setIsGenerating(false)
+      setIsAnalyzingUrl(false)
     }
   }
 
-  const handleCopyContent = () => {
+  const removeCompetitorUrl = (urlId) => {
+    setFormData(prev => ({
+      ...prev,
+      competitor_urls: prev.competitor_urls.filter(url => url.id !== urlId)
+    }))
+    setTopRankingArticles(prev => prev.filter(article => article.id !== urlId))
+  }
+
+  const renderSidebar = () => (
+    <div className="w-full max-w-[170px] mx-auto">
+      <div className="space-y-3">
+        {[
+          { step: 1, label: 'Enter a Topic', completed: !!formData.topic.trim() },
+          { step: 2, label: 'Target Location', completed: !!formData.target_country },
+          { step: 3, label: 'Article Language', completed: !!formData.article_language },
+          { step: 4, label: 'Competitor URLs', completed: formData.competitor_urls.length > 0 },
+          { step: 5, label: 'Keywords', completed: !!formData.keywords.trim() },
+          { step: 6, label: 'Article Type', completed: !!formData.article_type },
+          { step: 7, label: 'Primary Keyword', completed: !!formData.primary_keyword.trim() },
+          { step: 8, label: 'Secondary Keywords', completed: formData.secondary_keywords.length > 0 },
+          { step: 9, label: 'Research Method', completed: !!formData.research_method },
+          { step: 10, label: 'Generate Article', completed: !!generatedContent }
+        ].map((item) => (
+          <div key={item.step} className="flex items-center space-x-3 py-2">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
+              item.completed 
+                ? 'bg-primary text-primary-foreground shadow-sm' 
+                : 'bg-muted text-muted-foreground border border-border'
+            }`}>
+              {item.step}
+            </div>
+            <span className={`text-sm leading-tight ${
+              item.completed ? 'text-foreground font-medium' : 'text-muted-foreground'
+            }`}>
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  const renderMainContent = () => {
+    if (isGenerating) {
+      return renderProgressSection()
+    }
+    
     if (generatedContent) {
-      navigator.clipboard.writeText(generatedContent.content)
-      alert('콘텐츠가 클립보드에 복사되었습니다.')
+      return renderGeneratedContent()
     }
+    
+    return renderInputForm()
   }
 
-  const handlePostToWordPress = async () => {
-    if (!generatedContent || !formData.selected_site) {
-      setError('WordPress 사이트를 선택해주세요.')
-      return
-    }
+  const renderProgressSection = () => (
+    <div className="max-w-2xl mx-auto text-center space-y-8">
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">AI가 콘텐츠를 생성하고 있습니다</h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          {GENERATION_STEPS[currentStep]?.name}... 잠시만 기다려주세요
+        </p>
+      </div>
+      
+      <div className="space-y-3">
+        <Progress value={generationProgress} className="h-2" />
+        <p className="text-sm text-gray-500">{generationProgress}% 완료</p>
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span className="text-sm">처리 중...</span>
+      </div>
+    </div>
+  )
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/wordpress/post`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          site_id: parseInt(formData.selected_site),
-          title: generatedContent.title,
-          content: generatedContent.content,
-          status: formData.post_status,
-          categories: generatedContent.categories,
-          tags: generatedContent.tags,
-          excerpt: generatedContent.excerpt,
-          meta_description: generatedContent.meta_description
-        })
-      })
+  const renderInputForm = () => (
+    <div className="w-full max-w-none px-16 xl:px-20 space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Start Your Article: Choose Your Topic</h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Define the key elements to tailor your content for targeted impact
+        </p>
+      </div>
 
-      const data = await response.json()
-
-      if (data.success) {
-        alert('WordPress에 성공적으로 포스팅되었습니다!')
-      } else {
-        throw new Error(data.message || '포스팅에 실패했습니다.')
-      }
-    } catch (error) {
-      setError(error.message)
-    }
-  }
-
-  const renderProgressSection = () => {
-    if (!isGenerating && generationStep === 0) return null
-
-    return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Sparkles className="h-5 w-5" />
-            <span>콘텐츠 생성 중</span>
-          </CardTitle>
-          <CardDescription>
-            AI가 SEO 최적화된 콘텐츠를 생성하고 있습니다
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>전체 진행률</span>
-              <span>{Math.round(generationProgress)}%</span>
-            </div>
-            <Progress value={generationProgress} className="w-full" />
-          </div>
-
-          <div className="space-y-3">
-            {GENERATION_STEPS.map((step, index) => {
-              const StepIcon = step.icon
-              const isCompleted = generationStep > step.id
-              const isCurrent = generationStep === step.id
-              const isPending = generationStep < step.id
-
-              return (
-                <div key={step.id} className="flex items-center space-x-3">
-                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                    isCompleted ? 'bg-green-500 text-white' :
-                    isCurrent ? 'bg-blue-500 text-white' :
-                    'bg-gray-200 text-gray-500'
-                  }`}>
-                    {isCompleted ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : isCurrent ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <StepIcon className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className={`font-medium ${
-                      isCompleted ? 'text-green-600' :
-                      isCurrent ? 'text-blue-600' :
-                      'text-gray-500'
-                    }`}>
-                      {step.name}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {isCurrent ? step.description : 
-                       isCompleted ? '완료됨' : '대기 중'}
-                    </div>
-                  </div>
-                  <div>
-                    {isCompleted && <Badge variant="default">완료</Badge>}
-                    {isCurrent && <Badge variant="secondary">진행 중</Badge>}
-                    {isPending && <Badge variant="outline">대기</Badge>}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const renderUnifiedForm = () => (
-    <div className="w-full px-8">
-      {/* Start Your Article: Choose Your Topic */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Start Your Article: Choose Your Topic</h2>
-        <p className="text-sm text-muted-foreground mb-6">Define the key elements to tailor your content for targeted impact.</p>
-        
-        {/* Topic */}
-        <div className="mb-6">
-          <Label className="text-sm font-medium text-foreground mb-2 block">Topic</Label>
-          <Input
-            placeholder="Enter your topic here..."
-            value={formData.keyword}
-            onChange={(e) => handleInputChange('keyword', e.target.value)}
-            className="w-full"
-            id="keyword"
-          />
+      {/* Topic Input */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Topic</Label>
+        <Input
+          placeholder="Enter your article's topic here"
+          value={formData.topic}
+          onChange={(e) => handleInputChange('topic', e.target.value)}
+          className="h-12 text-base"
+        />
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className="text-xs">ansible은 왜 많은 클러스터 관리 도구 중에서 선택되는가?</Badge>
+          <Badge variant="outline" className="text-xs">ansible은 CICD 파이프라인의 구성요소인가?</Badge>
+          <Badge variant="outline" className="text-xs">ansible은 운을 실무 에서도 요긴하게 놀라다</Badge>
+          <Badge variant="outline" className="text-xs">ansible은 클러스터 관리 자동화의 핵심 도구가</Badge>
         </div>
+      </div>
 
-        {/* Suggested Topics */}
-        <div className="mb-6">
-          <Label className="text-sm text-muted-foreground mb-2 block">Suggested Topics</Label>
-          <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible을 활용한 클라우드 자동화')}>ansible을 활용한 클라우드 자동화</span>
-            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible 플레이북 작성하기')}>ansible 플레이북 작성하기</span>
-            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible과 CI/CD 통합 가이드')}>ansible과 CI/CD 통합 가이드</span>
-            <span className="px-3 py-1 bg-muted rounded-full text-xs cursor-pointer hover:bg-muted/80" onClick={() => handleInputChange('keyword', 'ansible로 서버관리 DevOps 적용')}>ansible로 서버관리 DevOps 적용</span>
-          </div>
-        </div>
-
-        {/* Target Audience Location & Article Language */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <div>
-            <Label className="text-sm font-medium text-foreground mb-2 block">Target Audience Location</Label>
-            <Select value={formData.target_country} onValueChange={(value) => handleInputChange('target_country', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select location" />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRIES.map((country) => (
-                  <SelectItem key={country.value} value={country.value}>
-                    {country.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label className="text-sm font-medium text-foreground mb-2 block">Article Language</Label>
-            <Select value={formData.content_language} onValueChange={(value) => handleInputChange('content_language', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                {LANGUAGES.map((language) => (
-                  <SelectItem key={language.value} value={language.value}>
-                    {language.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Primary Keyword & Title */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <div>
-            <Label className="text-sm font-medium text-foreground mb-2 block">Primary Keyword</Label>
-            <Input
-              placeholder="Enter your primary keyword"
-              value={formData.primary_keyword}
-              onChange={(e) => handleInputChange('primary_keyword', e.target.value)}
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label className="text-sm font-medium text-foreground">Article Title (Optional)</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleSuggestTitle}
-                disabled={isGeneratingTitle}
-                className="h-7 px-3 text-xs"
-              >
-                {isGeneratingTitle ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Suggest Title
-                  </>
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        {/* Target Audience Location */}
+        <div className="space-y-3">
+          <Label className="text-base font-semibold">Target Audience Location</Label>
+          <Select value={formData.target_country} onValueChange={(value) => handleInputChange('target_country', value)}>
+            <SelectTrigger className="h-12">
+              <SelectValue>
+                {COUNTRIES.find(c => c.value === formData.target_country) && (
+                  <div className="flex items-center gap-2">
+                    <span>{COUNTRIES.find(c => c.value === formData.target_country).flag}</span>
+                    <span>{COUNTRIES.find(c => c.value === formData.target_country).label}</span>
+                  </div>
                 )}
-              </Button>
-            </div>
-            <Input
-              placeholder="Enter a custom title if desired"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Article Type */}
-        <div className="mb-6">
-          <Label className="text-sm font-medium text-foreground mb-3 block">Article Type</Label>
-          <div className="grid grid-cols-3 gap-3">
-            {CONTENT_TYPES.map((type) => {
-              const TypeIcon = type.icon
-              return (
-                <div
-                  key={type.value}
-                  className={`flex flex-col items-center space-y-2 p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
-                    formData.content_type === type.value
-                      ? 'border-primary bg-neutral-900 text-primary-foreground shadow-sm ring-1 ring-neutral-900 dark:bg-muted dark:text-foreground dark:border-muted-foreground'
-                      : 'border-border hover:border-primary hover:bg-primary/90 hover:text-primary-foreground dark:hover:border-muted-foreground dark:hover:bg-muted/50'
-                  }`}
-                  onClick={() => handleInputChange('content_type', type.value)}
-                >
-                  <TypeIcon className="h-6 w-6" />
-                  <span className="font-medium text-sm">{type.label}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Writing Style */}
-        <div className="mb-6">
-          <Label className="text-sm font-medium text-foreground mb-3 block">Writing Style</Label>
-          <div className="grid grid-cols-3 gap-3">
-            {TONES.map((tone) => (
-              <div
-                key={tone.value}
-                className={`px-4 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
-                  formData.tone === tone.value
-                    ? 'border-primary bg-neutral-900 text-primary-foreground shadow-sm ring-1 ring-neutral-900 dark:bg-muted dark:text-foreground dark:border-muted-foreground'
-                    : 'border-border hover:border-primary hover:bg-primary/90 hover:text-primary-foreground dark:hover:border-muted-foreground dark:hover:bg-muted/50'
-                }`}
-                onClick={() => handleInputChange('tone', tone.value)}
-              >
-                <div className="font-medium text-sm">{tone.label}</div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
+              <div className="p-2">
+                <Input 
+                  placeholder="Select location..." 
+                  className="h-8 text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                />
               </div>
-            ))}
+              {COUNTRIES.map(country => (
+                <SelectItem key={country.value} value={country.value} className="flex items-center">
+                  <div className="flex items-center gap-2">
+                    <span>{country.flag}</span>
+                    <span>{country.label}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Article Language */}
+        <div className="space-y-3">
+          <Label className="text-base font-semibold">Article Language</Label>
+          <Select value={formData.article_language} onValueChange={(value) => handleInputChange('article_language', value)}>
+            <SelectTrigger className="h-12">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
+              <div className="p-2">
+                <Input 
+                  placeholder="Select location..." 
+                  className="h-8 text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              {LANGUAGES.map(lang => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Select Top-Performing Competitor Articles */}
+      <div className="space-y-4">
+        <div>
+          <Label className="text-base font-semibold">Select Top-Performing Competitor Articles</Label>
+          <p className="text-sm text-muted-foreground mt-1">Choose up to 5 articles to optimize your content strategy</p>
+        </div>
+
+        {/* Add Your Own */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Add Your Own</Label>
+          <div className="relative">
+            <Input
+              placeholder="Enter URL of a specific article you want to analyze"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              className="h-12 pr-20"
+              onKeyPress={(e) => e.key === 'Enter' && addCompetitorUrl()}
+            />
+            <Button 
+              onClick={addCompetitorUrl}
+              disabled={isAnalyzingUrl || !urlInput.trim() || formData.competitor_urls.length >= 5}
+              className="absolute right-2 top-2 h-8 px-4 bg-black hover:bg-gray-800 text-white text-sm dark:bg-white dark:hover:bg-gray-200 dark:text-black"
+            >
+              {isAnalyzingUrl ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                'Add +'
+              )}
+            </Button>
           </div>
         </div>
 
-        {/* Article Structure & Configuration */}
-        <div className="grid grid-cols-2 gap-8 mb-6">
-          {/* Left Column: Article Length */}
-          <div>
-            <Label className="text-sm font-medium text-foreground mb-3 block">Article Length</Label>
-            <div className="space-y-3">
-              {WORD_COUNTS.map((count) => (
-                <label
-                  key={count.value}
-                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                    formData.word_count === count.value
-                      ? 'border-primary bg-neutral-900 text-primary-foreground shadow-sm ring-1 ring-neutral-900 dark:bg-muted dark:text-foreground dark:border-muted-foreground'
-                      : 'border-border hover:border-primary hover:bg-primary/90 hover:text-primary-foreground dark:hover:border-muted-foreground dark:hover:bg-muted/50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="word_count"
-                    value={count.value}
-                    checked={formData.word_count === count.value}
-                    onChange={(e) => handleInputChange('word_count', parseInt(e.target.value))}
-                    className="sr-only"
-                  />
-                  <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
-                    formData.word_count === count.value ? 'border-slate-500 dark:border-primary-foreground' : 'border-border'
-                  }`}>
-                    {formData.word_count === count.value && (
-                      <div className="w-2 h-2 rounded-full bg-slate-500 dark:bg-primary-foreground"></div>
-                    )}
+        {/* Top Ranking Articles */}
+        {topRankingArticles.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Top Ranking Articles</Label>
+              <span className="text-sm text-muted-foreground">Selected: {topRankingArticles.filter(a => a.selected).length}/{topRankingArticles.length}</span>
+            </div>
+            <div className="space-y-2">
+              {topRankingArticles.map((article) => (
+                <div key={article.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <Globe className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{article.title}</div>
+                      <div className="text-xs text-muted-foreground">{article.url}</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-sm">{count.label}</div>
-                    <div className="text-xs opacity-70">{count.desc}</div>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="text-xs border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400">
+                      Added
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => removeCompetitorUrl(article.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                </label>
+                </div>
               ))}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Right Column: Secondary Keywords, Point of View, Headings */}
-          <div className="space-y-6 pb-12">
-            {/* Secondary Keywords - 왼쪽과 정확히 맞춤 */}
-            <div>
-              <Label className="text-sm font-medium text-foreground mb-3 block">Secondary Keywords</Label>
-              <div className="space-y-3 pt-1">
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Enter secondary keyword and press Enter"
-                    value={secondaryKeywordInput}
-                    onChange={(e) => setSecondaryKeywordInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addSecondaryKeyword()}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={addSecondaryKeyword}
-                    disabled={formData.secondary_keywords.length >= 5 || !secondaryKeywordInput.trim()}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Add
-                  </Button>
-                </div>
-                
-                {formData.secondary_keywords.length > 0 && (
-                  <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg min-h-[64px]">
-                    {formData.secondary_keywords.map((keyword, index) => (
-                      <Badge key={index} variant="secondary" className="px-3 py-1 flex items-center bg-muted-foreground/10 text-foreground border border-border">
-                        <span>{keyword}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeSecondaryKeyword(keyword)}
-                          className="ml-2 hover:text-red-500 focus:outline-none"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+      {/* Keywords */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Keywords (Optional)</Label>
+        <Textarea
+          placeholder="Enter your keywords here..."
+          value={formData.keywords}
+          onChange={(e) => handleInputChange('keywords', e.target.value)}
+          className="min-h-20 resize-none"
+        />
+      </div>
+
+      {/* Article Type - Full Width Single Row */}
+      <div className="space-y-4">
+        <Label className="text-base font-semibold">Article Type</Label>
+        <div className="grid grid-cols-5 lg:grid-cols-9 gap-3">
+          {ARTICLE_TYPES.map(type => {
+            const Icon = type.icon
+            const isSelected = formData.article_type === type.id
+            return (
+              <Button
+                key={type.id}
+                variant={isSelected ? "default" : "outline"}
+                className={`h-auto py-4 px-3 flex-col gap-2 relative ${
+                  isSelected 
+                    ? 'bg-primary text-primary-foreground shadow-md' 
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                }`}
+                onClick={() => handleInputChange('article_type', type.id)}
+              >
+                {type.id === 'ai-recommended' && (
+                  <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    AI
                   </div>
                 )}
-                
-                <div className="text-sm text-muted-foreground">
-                  {formData.secondary_keywords.length}/5 keywords used
-                </div>
+                <Icon className="w-5 h-5" />
+                <span className="text-xs font-medium text-center leading-tight">
+                  {type.label}
+                </span>
+              </Button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Two Column Layout for Keywords */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Primary Keyword */}
+        <div className="space-y-3">
+          <Label className="text-base font-semibold">Primary Keyword</Label>
+          <Input
+            placeholder="Enter your primary SEO keyword"
+            value={formData.primary_keyword}
+            onChange={(e) => handleInputChange('primary_keyword', e.target.value)}
+            className="h-12"
+          />
+        </div>
+
+        {/* Secondary Keywords */}
+        <div className="space-y-3">
+          <Label className="text-base font-semibold">Secondary Keywords</Label>
+          <div className="space-y-3">
+            <div className="flex space-x-3">
+              <Input
+                placeholder="Enter secondary keyword and press Enter"
+                value={secondaryKeywordInput}
+                onChange={(e) => setSecondaryKeywordInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addSecondaryKeyword()}
+                className="flex-1 h-12"
+              />
+              <Button 
+                onClick={addSecondaryKeyword}
+                disabled={formData.secondary_keywords.length >= 5 || !secondaryKeywordInput.trim()}
+                className="h-12 px-6"
+              >
+                Add
+              </Button>
+            </div>
+
+            {formData.secondary_keywords.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-3 bg-muted/20 rounded-lg border border-border/20">
+                {formData.secondary_keywords.map((keyword, index) => (
+                  <Badge key={index} variant="secondary" className="px-3 py-1.5 flex items-center bg-background text-foreground border border-border hover:bg-muted">
+                    <span>{keyword}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeSecondaryKeyword(keyword)}
+                      className="ml-2 hover:text-red-500 focus:outline-none"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
               </div>
-            </div>
-
-            {/* Point of View */}
-            <div>
-              <Label className="text-sm font-medium text-foreground mb-2 block">Point of View</Label>
-              <Select value={formData.perspective} onValueChange={(value) => handleInputChange('perspective', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select perspective" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PERSPECTIVES.map((perspective) => (
-                    <SelectItem key={perspective.value} value={perspective.value}>
-                      {perspective.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Number of Headings */}
-            <div>
-              <Label className="text-sm font-medium text-foreground mb-2 block">Number of Headings</Label>
-              <Select value={formData.heading_count} onValueChange={(value) => handleInputChange('heading_count', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select headings" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HEADING_COUNTS.map((count) => (
-                    <SelectItem key={count.value} value={count.value}>
-                      {count.label} - {count.desc}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 좌우 끝 맞추기 위한 하단 여백 */}
-            <div className="h-6"></div>
+            )}
+            
+            <p className="text-sm text-muted-foreground">
+              {formData.secondary_keywords.length}/5 keywords used • Helps improve SEO ranking
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Research Method - Full Width */}
+      <div className="space-y-4">
+        <Label className="text-base font-semibold">Research Method</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Button
+            variant={formData.research_method === 'ai-web-research' ? 'default' : 'outline'}
+            className="h-16 justify-start p-6"
+            onClick={() => handleInputChange('research_method', 'ai-web-research')}
+          >
+            <div className="flex items-center gap-4">
+              <Search className="w-6 h-6" />
+              <div className="text-left">
+                <div className="font-semibold text-base">AI Web Research</div>
+                <div className="text-sm opacity-70">Recommended • Analyzes hundreds of articles</div>
+              </div>
+            </div>
+          </Button>
+          <Button
+            variant={formData.research_method === 'custom-sources' ? 'default' : 'outline'}
+            className="h-16 justify-start p-6"
+            onClick={() => handleInputChange('research_method', 'custom-sources')}
+          >
+            <div className="flex items-center gap-4">
+              <Database className="w-6 h-6" />
+              <div className="text-left">
+                <div className="font-semibold text-base">Custom Sources</div>
+                <div className="text-sm opacity-70">Upload files/links • Brand consistency</div>
+              </div>
+            </div>
+          </Button>
+        </div>
+      </div>
+
+      {/* Generate Button */}
+      <div className="flex justify-center pt-8">
+        <Button 
+          onClick={handleGenerate}
+          disabled={isGenerating || !formData.topic.trim()}
+          className="px-12 py-3 text-lg font-semibold"
+        >
+          Generate Article
+        </Button>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-red-800 dark:text-red-400">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   )
 
@@ -692,132 +639,50 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
     if (!generatedContent) return null
 
     return (
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>생성된 콘텐츠</span>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={handleCopyContent}>
-                <Copy className="mr-2 h-4 w-4" />
-                복사
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                다운로드
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">제목</Label>
-            <div className="mt-1 p-3 bg-gray-50 rounded-md">
-              {generatedContent.title}
-            </div>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">생성된 콘텐츠</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(generatedContent.content)}>
+              <Copy className="w-4 h-4 mr-2" />
+              복사
+            </Button>
+            <Button size="sm">
+              <Send className="w-4 h-4 mr-2" />
+              WordPress로 발행
+            </Button>
           </div>
-          
-          <div>
-            <Label className="text-sm font-medium">콘텐츠</Label>
-            <div className="mt-1 p-3 bg-gray-50 rounded-md max-h-96 overflow-y-auto">
-              <div dangerouslySetInnerHTML={{ __html: generatedContent.content }} />
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>{generatedContent.title}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose dark:prose-invert max-w-none">
+              {generatedContent.content}
             </div>
-          </div>
-
-          {generatedContent.seo_analysis && (
-            <div>
-              <Label className="text-sm font-medium">SEO 분석</Label>
-              <div className="mt-1 p-3 bg-blue-50 rounded-md">
-                <p>SEO 점수: {generatedContent.seo_analysis.score}/100</p>
-                <p>키워드 밀도: {generatedContent.seo_analysis.keyword_density}%</p>
-              </div>
-            </div>
-          )}
-
-          {/* WordPress 포스팅 옵션 */}
-          {wpSites.length > 0 && (
-            <div className="border-t pt-4">
-              <Label className="text-sm font-medium">WordPress 포스팅</Label>
-              <div className="mt-2 space-y-3">
-                <Select value={formData.selected_site} onValueChange={(value) => handleInputChange('selected_site', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="사이트 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wpSites.map((site) => (
-                      <SelectItem key={site.id} value={site.id.toString()}>
-                        {site.name} ({site.url})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Select value={formData.post_status} onValueChange={(value) => handleInputChange('post_status', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">초안</SelectItem>
-                    <SelectItem value="publish">발행</SelectItem>
-                    <SelectItem value="private">비공개</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button onClick={handlePostToWordPress} className="w-full">
-                  <Send className="mr-2 h-4 w-4" />
-                  WordPress에 포스팅
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
-  // 완료 체크
-  const allStepsDone = !!formData.keyword.trim() && !!formData.target_country && !!formData.content_language && !!formData.primary_keyword.trim() && !!formData.content_type && !!formData.tone && !!formData.word_count && !!formData.perspective && !!formData.heading_count && formData.secondary_keywords.length > 0
-
   return (
     <div className="min-h-screen bg-background flex">
-      {/* 왼쪽 사이드바 - 입력 체크리스트 */}
+      {/* 왼쪽 사이드바 - 10-Step 체크리스트 */}
       <div className={`w-80 bg-background fixed top-16 bottom-0 overflow-y-auto border-r border-border z-30 transition-[left] duration-300 ease-out ${
         sidebarOpen ? 'left-64' : 'left-16'
       }`}>
-                  <div className="pt-8 pb-6 px-6 h-full flex flex-col">
-           <div className="mb-6 text-center mx-auto" style={{width:'max-content'}}>
-             <h3 className="text-lg font-bold text-foreground mb-2">10-Step Article</h3>
-             <p className="text-sm text-muted-foreground">Change</p>
-           </div>
-           <div className="space-y-4 w-full max-w-xs">
-             {[
-               { step: 1, label: 'Enter a Topic', completed: !!formData.keyword.trim() },
-               { step: 2, label: 'Target Location', completed: !!formData.target_country },
-               { step: 3, label: 'Article Language', completed: !!formData.content_language },
-               { step: 4, label: 'Primary Keyword', completed: !!formData.primary_keyword.trim() },
-               { step: 5, label: 'Article Type', completed: !!formData.content_type },
-               { step: 6, label: 'Writing Style', completed: !!formData.tone },
-               { step: 7, label: 'Article Length', completed: !!formData.word_count },
-               { step: 8, label: 'Point of View', completed: !!formData.perspective },
-               { step: 9, label: 'Number of Headings', completed: !!formData.heading_count },
-               { step: 10, label: 'Secondary Keywords', completed: formData.secondary_keywords.length > 0 }
-             ].map((item) => (
-               <div key={item.step} className="flex items-center space-x-3 py-1">
-                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                   item.completed 
-                     ? 'bg-primary text-primary-foreground' 
-                     : 'bg-muted text-muted-foreground'
-                 }`}>
-                   {item.step}
-                 </div>
-                 <span className={`text-sm ${
-                   item.completed ? 'text-foreground font-medium' : 'text-muted-foreground'
-                 }`}>
-                   {item.label}
-                 </span>
-               </div>
-             ))}
-           </div>
+        <div className="pt-8 pb-6 px-6 h-full flex flex-col">
+          <div className="mb-8 text-center">
+            <h3 className="text-lg font-bold text-foreground mb-1">10-Step Article</h3>
+            <p className="text-sm text-muted-foreground">Content Generator</p>
           </div>
+          <div className="flex-1">
+            {renderSidebar()}
+          </div>
+        </div>
       </div>
 
       {/* 메인 콘텐츠 영역 */}
@@ -825,45 +690,7 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
         sidebarOpen ? 'ml-[24rem]' : 'ml-[24rem]'
       }`}>
         <div className="p-8">
-          {/* Error Message */}
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Generation Progress */}
-          {renderProgressSection()}
-
-          {/* Generated Content */}
-          {renderGeneratedContent()}
-
-          {/* Unified Form */}
-          {!isGenerating && generationStep <= GENERATION_STEPS.length && renderUnifiedForm()}
-
-          {/* 페이지 하단 게시물 생성 버튼 */}
-          {!isGenerating && generationStep <= GENERATION_STEPS.length && (
-            <div className="mt-16 mb-12 flex justify-end">
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="w-40 h-10 bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-700 hover:to-slate-900 dark:from-slate-200 dark:to-slate-400 dark:hover:from-slate-300 dark:hover:to-slate-500 dark:text-slate-900 font-semibold shadow-lg hover:shadow-xl transition-all rounded-lg"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    <span>생성 중...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    <span>게시물 생성</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
+          {renderMainContent()}
         </div>
       </div>
     </div>
