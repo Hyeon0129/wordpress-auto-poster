@@ -221,13 +221,16 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
 
   const validateForm = () => {
     const errors = []
-    if (!formData.keyword.trim()) errors.push('핵심 키워드를 입력해주세요')
-    if (!formData.tone) errors.push('톤 & 스타일을 선택해주세요')
-    if (!formData.content_type) errors.push('콘텐츠 유형을 선택해주세요')
-    if (!formData.primary_keyword.trim()) errors.push('Primary Keyword를 입력해주세요')
-    
+    let firstErrorField = null
+    if (!formData.keyword.trim()) {errors.push('핵심 키워드를 입력해주세요');firstErrorField='keyword'}
+    if (!formData.tone) {errors.push('톤 & 스타일을 선택해주세요');if(!firstErrorField)firstErrorField='tone'}
+    if (!formData.content_type) {errors.push('콘텐츠 유형을 선택해주세요');if(!firstErrorField)firstErrorField='content_type'}
+    if (!formData.primary_keyword.trim()) {errors.push('Primary Keyword를 입력해주세요');if(!firstErrorField)firstErrorField='primary_keyword'}
     if (errors.length > 0) {
       setError(errors.join(', '))
+      // 스크롤 이동
+      const el=document.getElementById(firstErrorField)
+      if(el){el.scrollIntoView({behavior:'smooth',block:'center'})}
       return false
     }
     setError('')
@@ -420,6 +423,7 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
             value={formData.keyword}
             onChange={(e) => handleInputChange('keyword', e.target.value)}
             className="w-full"
+            id="keyword"
           />
         </div>
 
@@ -523,8 +527,8 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
                   key={type.value}
                   className={`flex flex-col items-center space-y-2 p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
                     formData.content_type === type.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
-                      : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                      ? 'border-primary bg-neutral-900 text-primary-foreground shadow-sm ring-1 ring-neutral-900 dark:bg-muted dark:text-foreground dark:border-muted-foreground'
+                      : 'border-border hover:border-primary hover:bg-primary/90 hover:text-primary-foreground dark:hover:border-muted-foreground dark:hover:bg-muted/50'
                   }`}
                   onClick={() => handleInputChange('content_type', type.value)}
                 >
@@ -545,8 +549,8 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
                 key={tone.value}
                 className={`px-4 py-3 border rounded-lg cursor-pointer transition-all hover:shadow-md text-center ${
                   formData.tone === tone.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
-                    : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                    ? 'border-primary bg-neutral-900 text-primary-foreground shadow-sm ring-1 ring-neutral-900 dark:bg-muted dark:text-foreground dark:border-muted-foreground'
+                    : 'border-border hover:border-primary hover:bg-primary/90 hover:text-primary-foreground dark:hover:border-muted-foreground dark:hover:bg-muted/50'
                 }`}
                 onClick={() => handleInputChange('tone', tone.value)}
               >
@@ -556,9 +560,9 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
           </div>
         </div>
 
-        {/* Article Structure & Secondary Keywords */}
+        {/* Article Structure & Configuration */}
         <div className="grid grid-cols-2 gap-8 mb-6">
-          {/* Article Structure */}
+          {/* Left Column: Article Length */}
           <div>
             <Label className="text-sm font-medium text-foreground mb-3 block">Article Length</Label>
             <div className="space-y-3">
@@ -567,8 +571,8 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
                   key={count.value}
                   className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
                     formData.word_count === count.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm dark:border-muted-foreground dark:bg-muted dark:text-foreground'
-                      : 'border-border hover:border-muted-foreground hover:bg-muted/50'
+                      ? 'border-primary bg-neutral-900 text-primary-foreground shadow-sm ring-1 ring-neutral-900 dark:bg-muted dark:text-foreground dark:border-muted-foreground'
+                      : 'border-border hover:border-primary hover:bg-primary/90 hover:text-primary-foreground dark:hover:border-muted-foreground dark:hover:bg-muted/50'
                   }`}
                 >
                   <input
@@ -576,101 +580,108 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
                     name="word_count"
                     value={count.value}
                     checked={formData.word_count === count.value}
-                    onChange={(e) => handleInputChange('word_count', e.target.value)}
+                    onChange={(e) => handleInputChange('word_count', parseInt(e.target.value))}
                     className="sr-only"
                   />
                   <div className={`w-4 h-4 rounded-full border-2 mr-4 flex items-center justify-center ${
-                    formData.word_count === count.value ? 'border-blue-500 dark:border-muted-foreground' : 'border-border'
+                    formData.word_count === count.value ? 'border-slate-500 dark:border-primary-foreground' : 'border-border'
                   }`}>
                     {formData.word_count === count.value && (
-                      <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-muted-foreground"></div>
+                      <div className="w-2 h-2 rounded-full bg-slate-500 dark:bg-primary-foreground"></div>
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-sm text-foreground">{count.label}</div>
-                    <div className="text-xs text-muted-foreground">{count.desc}</div>
+                    <div className="font-semibold text-sm">{count.label}</div>
+                    <div className="text-xs opacity-70">{count.desc}</div>
                   </div>
                 </label>
               ))}
             </div>
-
-            {/* Point of View & Headings */}
-            <div className="mt-6 space-y-4">
-              <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">Point of View</Label>
-                <Select value={formData.perspective} onValueChange={(value) => handleInputChange('perspective', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select perspective" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PERSPECTIVES.map((perspective) => (
-                      <SelectItem key={perspective.value} value={perspective.value}>
-                        {perspective.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-foreground mb-2 block">Number of Headings</Label>
-                <Select value={formData.heading_count} onValueChange={(value) => handleInputChange('heading_count', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select headings" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {HEADING_COUNTS.map((count) => (
-                      <SelectItem key={count.value} value={count.value}>
-                        {count.label} - {count.desc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
           </div>
 
-          {/* Secondary Keywords */}
-          <div>
-            <Label className="text-sm font-medium text-foreground mb-3 block">Secondary Keywords</Label>
-            <div className="space-y-4">
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Enter secondary keyword and press Enter"
-                  value={secondaryKeywordInput}
-                  onChange={(e) => setSecondaryKeywordInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addSecondaryKeyword()}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={addSecondaryKeyword}
-                  disabled={formData.secondary_keywords.length >= 5 || !secondaryKeywordInput.trim()}
-                >
-                  Add
-                </Button>
-              </div>
-              
-              {formData.secondary_keywords.length > 0 && (
-                <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg">
-                  {formData.secondary_keywords.map((keyword, index) => (
-                    <Badge key={index} variant="secondary" className="px-3 py-1 flex items-center bg-muted-foreground/10 text-foreground border border-border">
-                      <span>{keyword}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeSecondaryKeyword(keyword)}
-                        className="ml-2 hover:text-red-500 focus:outline-none"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
+          {/* Right Column: Secondary Keywords, Point of View, Headings */}
+          <div className="space-y-6 pb-12">
+            {/* Secondary Keywords - 왼쪽과 정확히 맞춤 */}
+            <div>
+              <Label className="text-sm font-medium text-foreground mb-3 block">Secondary Keywords</Label>
+              <div className="space-y-3 pt-1">
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Enter secondary keyword and press Enter"
+                    value={secondaryKeywordInput}
+                    onChange={(e) => setSecondaryKeywordInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addSecondaryKeyword()}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={addSecondaryKeyword}
+                    disabled={formData.secondary_keywords.length >= 5 || !secondaryKeywordInput.trim()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Add
+                  </Button>
                 </div>
-              )}
-              
-              <div className="text-sm text-gray-500">
-                {formData.secondary_keywords.length}/5 keywords used
+                
+                {formData.secondary_keywords.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-lg min-h-[64px]">
+                    {formData.secondary_keywords.map((keyword, index) => (
+                      <Badge key={index} variant="secondary" className="px-3 py-1 flex items-center bg-muted-foreground/10 text-foreground border border-border">
+                        <span>{keyword}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeSecondaryKeyword(keyword)}
+                          className="ml-2 hover:text-red-500 focus:outline-none"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="text-sm text-muted-foreground">
+                  {formData.secondary_keywords.length}/5 keywords used
+                </div>
               </div>
             </div>
+
+            {/* Point of View */}
+            <div>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Point of View</Label>
+              <Select value={formData.perspective} onValueChange={(value) => handleInputChange('perspective', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select perspective" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERSPECTIVES.map((perspective) => (
+                    <SelectItem key={perspective.value} value={perspective.value}>
+                      {perspective.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Number of Headings */}
+            <div>
+              <Label className="text-sm font-medium text-foreground mb-2 block">Number of Headings</Label>
+              <Select value={formData.heading_count} onValueChange={(value) => handleInputChange('heading_count', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select headings" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HEADING_COUNTS.map((count) => (
+                    <SelectItem key={count.value} value={count.value}>
+                      {count.label} - {count.desc}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 좌우 끝 맞추기 위한 하단 여백 */}
+            <div className="h-6"></div>
           </div>
         </div>
       </div>
@@ -763,6 +774,9 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
     )
   }
 
+  // 완료 체크
+  const allStepsDone = !!formData.keyword.trim() && !!formData.target_country && !!formData.content_language && !!formData.primary_keyword.trim() && !!formData.content_type && !!formData.tone && !!formData.word_count && !!formData.perspective && !!formData.heading_count && formData.secondary_keywords.length > 0
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* 왼쪽 사이드바 - 입력 체크리스트 */}
@@ -770,7 +784,7 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
         sidebarOpen ? 'left-64' : 'left-16'
       }`}>
                   <div className="pt-8 pb-6 px-6 h-full flex flex-col">
-           <div className="mb-6">
+           <div className="mb-6 text-center mx-auto" style={{width:'max-content'}}>
              <h3 className="text-lg font-bold text-foreground mb-2">10-Step Article</h3>
              <p className="text-sm text-muted-foreground">Change</p>
            </div>
