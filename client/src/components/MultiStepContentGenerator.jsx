@@ -108,6 +108,8 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
   const [urlInput, setUrlInput] = useState('')
   const [isAnalyzingUrl, setIsAnalyzingUrl] = useState(false)
   const [topRankingArticles, setTopRankingArticles] = useState([])
+  const [countrySearchTerm, setCountrySearchTerm] = useState('')
+  const [languageSearchTerm, setLanguageSearchTerm] = useState('')
 
   useEffect(() => {
     loadWordPressSites()
@@ -251,6 +253,14 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
     setTopRankingArticles(prev => prev.filter(article => article.id !== urlId))
   }
 
+  const filteredCountries = COUNTRIES.filter(country =>
+    country.label.toLowerCase().includes(countrySearchTerm.toLowerCase())
+  )
+
+  const filteredLanguages = LANGUAGES.filter(language =>
+    language.label.toLowerCase().includes(languageSearchTerm.toLowerCase())
+  )
+
   const renderSidebar = () => (
     <div className="w-full max-w-[170px] mx-auto">
       <div className="space-y-3">
@@ -345,13 +355,13 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
         </div>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Target Audience Location */}
+      {/* Two Column Layout - 5:5 ratio with full width */}
+      <div className="grid grid-cols-2 gap-16">
+        {/* Target Audience Location - 50% width */}
         <div className="space-y-3">
           <Label className="text-base font-semibold">Target Audience Location</Label>
           <Select value={formData.target_country} onValueChange={(value) => handleInputChange('target_country', value)}>
-            <SelectTrigger className="h-12">
+            <SelectTrigger className="h-12 w-full">
               <SelectValue>
                 {COUNTRIES.find(c => c.value === formData.target_country) && (
                   <div className="flex items-center gap-2">
@@ -361,46 +371,80 @@ export default function MultiStepContentGenerator({ sidebarOpen = true }) {
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="max-h-80">
-              <div className="p-2">
+            <SelectContent className="max-h-80 w-full">
+              <div className="p-2 sticky top-0 bg-white dark:bg-gray-950 z-10">
                 <Input 
                   placeholder="Select location..." 
                   className="h-8 text-sm"
-                  onClick={(e) => e.stopPropagation()}
+                  value={countrySearchTerm}
+                  onChange={(e) => {
+                    setCountrySearchTerm(e.target.value)
+                  }}
+                  onKeyDown={(e) => {
+                    // 특정 키들만 Select로 전파되지 않도록 차단
+                    if (e.key !== 'Escape' && e.key !== 'Tab' && e.key !== 'Enter') {
+                      e.stopPropagation()
+                    }
+                  }}
+                  autoComplete="off"
                 />
               </div>
-              {COUNTRIES.map(country => (
-                <SelectItem key={country.value} value={country.value} className="flex items-center">
-                  <div className="flex items-center gap-2">
-                    <span>{country.flag}</span>
-                    <span>{country.label}</span>
+              <div className="max-h-60 overflow-y-auto">
+                {filteredCountries.map(country => (
+                  <SelectItem key={country.value} value={country.value} className="flex items-center">
+                    <div className="flex items-center gap-2">
+                      <span>{country.flag}</span>
+                      <span>{country.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+                {filteredCountries.length === 0 && (
+                  <div className="p-2 text-sm text-muted-foreground text-center">
+                    No countries found
                   </div>
-                </SelectItem>
-              ))}
+                )}
+              </div>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Article Language */}
+        {/* Article Language - 50% width */}
         <div className="space-y-3">
           <Label className="text-base font-semibold">Article Language</Label>
           <Select value={formData.article_language} onValueChange={(value) => handleInputChange('article_language', value)}>
-            <SelectTrigger className="h-12">
+            <SelectTrigger className="h-12 w-full">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="max-h-80">
-              <div className="p-2">
+            <SelectContent className="max-h-80 w-full">
+              <div className="p-2 sticky top-0 bg-white dark:bg-gray-950 z-10">
                 <Input 
-                  placeholder="Select location..." 
+                  placeholder="Select language..." 
                   className="h-8 text-sm"
-                  onClick={(e) => e.stopPropagation()}
+                  value={languageSearchTerm}
+                  onChange={(e) => {
+                    setLanguageSearchTerm(e.target.value)
+                  }}
+                  onKeyDown={(e) => {
+                    // 특정 키들만 Select로 전파되지 않도록 차단
+                    if (e.key !== 'Escape' && e.key !== 'Tab' && e.key !== 'Enter') {
+                      e.stopPropagation()
+                    }
+                  }}
+                  autoComplete="off"
                 />
               </div>
-              {LANGUAGES.map(lang => (
-                <SelectItem key={lang.value} value={lang.value}>
-                  {lang.label}
-                </SelectItem>
-              ))}
+              <div className="max-h-60 overflow-y-auto">
+                {filteredLanguages.map(lang => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+                {filteredLanguages.length === 0 && (
+                  <div className="p-2 text-sm text-muted-foreground text-center">
+                    No languages found
+                  </div>
+                )}
+              </div>
             </SelectContent>
           </Select>
         </div>
